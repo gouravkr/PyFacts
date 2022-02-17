@@ -1,13 +1,58 @@
 import datetime
-from typing import Any, Dict, Iterable, List, Union
+from dataclasses import dataclass
+from typing import List
 
 from dateutil.relativedelta import relativedelta
+
+
+@dataclass
+class Options:
+    date_format: str = '%Y-%m-%d'
+    closest: str = 'before'  # after
+
+
+class Frequency:
+    def __init__(self, name, interval_type, interval_value, interval_days_value):
+        self.name = name
+        self.type = interval_type
+        self.value = interval_value
+        self.days = interval_days_value
+
+    def __repr__(self):
+        return f"Frequency({self.name}, {self.type}, {self.value}, {self.days})"
+
+
+class AllFrequencies:
+    D = Frequency('daily', 'days', 1, 1)
+    W = Frequency('weekly', 'days', 7, 7)
+    M = Frequency('monthly', 'months', 1, 30)
+    Q = Frequency('quarterly', 'months', 3, 91)
+    H = Frequency('half-yearly', 'months', 6, 182)
+    Y = Frequency('annual', 'years', 1, 365)
+
+
+def create_date_series(
+    start_date: datetime.datetime,
+    end_date: datetime.datetime,
+    frequency: Frequency
+) -> List[datetime.datetime]:
+    """Creates a date series using a frequency"""
+
+    print(f"{start_date=}, {end_date=}")
+    datediff = (end_date - start_date).days/frequency.days+1
+    dates = []
+
+    for i in range(0, int(datediff)):
+        diff = {frequency.type: frequency.value*i}
+        dates.append(start_date + relativedelta(**diff))
+
+    return dates
 
 
 class TimeSeries:
     """Container for TimeSeries objects"""
 
-    def __init__(self, data: List[tuple], date_format: str = "%Y-%m-%d", frequency="infer"):
+    def __init__(self, data: List[tuple], date_format: str = "%Y-%m-%d", frequency="D"):
         """Instantiate a TimeSeries object
 
         Parameters
@@ -35,6 +80,7 @@ class TimeSeries:
             print("Warning: The input data contains duplicate dates which have been ignored.")
         self.start_date = list(self.time_series)[0]
         self.end_date = list(self.time_series)[-1]
+        self.frequency = getattr(AllFrequencies, frequency)
 
     def __repr__(self):
         if len(self.time_series) > 6:
@@ -80,7 +126,7 @@ class TimeSeries:
                 cur_val = self.time_series[cur_date]
             except KeyError:
                 pass
-            new_ts.update({cur_date: cur_val})
+            new_ts.update({cur_date: cur_val})  # type: ignore
 
         if inplace:
             self.time_series = new_ts
@@ -98,7 +144,7 @@ class TimeSeries:
                 cur_val = self.time_series[cur_date]
             except KeyError:
                 pass
-            new_ts.update({cur_date: cur_val})
+            new_ts.update({cur_date: cur_val})  # type: ignore
 
         if inplace:
             self.time_series = new_ts
@@ -161,3 +207,17 @@ class TimeSeries:
             rolling_returns.append((i, returns))
         self.rolling_returns = rolling_returns
         return self.rolling_returns
+
+
+if __name__ == '__main__':
+    date_series = [
+        datetime.datetime(2020, 1, 1),
+        datetime.datetime(2020, 1, 2),
+        datetime.datetime(2020, 1, 3),
+        datetime.datetime(2020, 1, 4),
+        datetime.datetime(2020, 1, 7),
+        datetime.datetime(2020, 1, 8),
+        datetime.datetime(2020, 1, 9),
+        datetime.datetime(2020, 1, 10),
+        datetime.datetime(2020, 1, 12),
+    ]
