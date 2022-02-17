@@ -11,15 +11,12 @@ class Options:
     closest: str = 'before'  # after
 
 
+@dataclass(frozen=True)
 class Frequency:
-    def __init__(self, name, interval_type, interval_value, interval_days_value):
-        self.name = name
-        self.type = interval_type
-        self.value = interval_value
-        self.days = interval_days_value
-
-    def __repr__(self):
-        return f"Frequency({self.name}, {self.type}, {self.value}, {self.days})"
+    name: str
+    freq_type: str
+    value: int
+    days: int
 
 
 class AllFrequencies:
@@ -43,7 +40,7 @@ def create_date_series(
     dates = []
 
     for i in range(0, int(datediff)):
-        diff = {frequency.type: frequency.value*i}
+        diff = {frequency.freq_type: frequency.value*i}
         dates.append(start_date + relativedelta(**diff))
 
     return dates
