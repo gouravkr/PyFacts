@@ -234,7 +234,7 @@ class TimeSeries:
         self,
         from_date: datetime.date,
         to_date: datetime.date,
-        frequency: str = "d",
+        frequency: str = "D",
         closest: str = "previous",
         compounding: bool = True,
         years: int = 1,
