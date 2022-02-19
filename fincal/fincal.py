@@ -196,7 +196,7 @@ class TimeSeriesCore:
     def tail(self, n: int = 6):
         keys = list(self.time_series.keys())
         keys = keys[-n:]
-        result = [(key, self.time_series[key]) for key in keys]
+        result = [item for item in self.time_series.items() if item[0] in keys]
         return result
 
 
