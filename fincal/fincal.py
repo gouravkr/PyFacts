@@ -90,8 +90,31 @@ def _preprocess_timeseries(
     return current_data
 
 
-class TimeSeries:
-    """Container for TimeSeries objects"""
+def _preprocess_match_options(as_on_match: str, prior_match: str, closest: str) -> datetime.timedelta:
+    """Checks the arguments and returns appropriate timedelta objects"""
+
+    deltas = {'exact': 0, 'previous': -1, 'next': 1}
+    if closest not in deltas.keys():
+        raise ValueError(f"Invalid closest argument: {closest}")
+
+    as_on_match = closest if as_on_match == 'closest' else as_on_match
+    prior_match = closest if prior_match == 'closest' else prior_match
+
+    if as_on_match in deltas.keys():
+        as_on_delta = datetime.timedelta(days=deltas[as_on_match])
+    else:
+        raise ValueError(f"Invalid as_on_match argument: {as_on_match}")
+
+    if prior_match in deltas.keys():
+        prior_delta = datetime.timedelta(days=deltas[prior_match])
+    else:
+        raise ValueError(f"Invalid prior_match argument: {prior_match}")
+
+    return as_on_delta, prior_delta
+
+
+class TimeSeriesCore:
+    """Defines the core building blocks of a TimeSeries object"""
 
     def __init__(
         self,
@@ -155,6 +178,31 @@ class TimeSeries:
             printable_str = "[{}]".format(',\n '.join([str({i: self.time_series[i]}) for i in printable_data]))
         return printable_str
 
+    def __getitem__(self, n):
+        keys = list(self.time_series.keys())
+        key = keys[n]
+        item = self.time_series[key]
+        return key, item
+
+    def __len__(self):
+        return len(self.time_series.keys())
+
+    def head(self, n: int = 6):
+        keys = list(self.time_series.keys())
+        keys = keys[:n]
+        result = [(key, self.time_series[key]) for key in keys]
+        return result
+
+    def tail(self, n: int = 6):
+        keys = list(self.time_series.keys())
+        keys = keys[-n:]
+        result = [(key, self.time_series[key]) for key in keys]
+        return result
+
+
+class TimeSeries(TimeSeriesCore):
+    """Container for TimeSeries objects"""
+
     def info(self):
         """Summary info about the TimeSeries object"""
 
@@ -199,31 +247,70 @@ class TimeSeries:
         return dict(reversed(new_ts.items()))
 
     def calculate_returns(
-        self, as_on: datetime.datetime, closest: str = "previous", compounding: bool = True, years: int = 1
+        self,
+        as_on: datetime.datetime,
+        as_on_match: str = 'closest',
+        prior_match: str = 'closest',
+        closest: str = "previous",
+        compounding: bool = True,
+        years: int = 1
     ) -> float:
         """Method to calculate returns for a certain time-period as on a particular date
+
+        Parameters
+        ----------
+        as_on : datetime.datetime
+            The date as on which the return is to be calculated.
+
+        as_on_match : str, optional
+            The mode of matching the as_on_date. Refer closest.
+
+        prior_match : str, optional
+            The mode of matching the prior_date. Refer closest.
+
+        closest : str, optional
+            The mode of matching the closest date.
+            Valid values are 'exact', 'previous', 'next' and next.
+
+        compounding : bool, optional
+            Whether the return should be compounded annually.
+
+        years : int, optional
+            number of years for which the returns should be calculated
+
+        Returns
+        -------
+        The float value of the returns.
+
+        Raises
+        ------
+        ValueError
+            * If match mode for any of the dates is exact and the exact match is not found
+            * If the arguments passsed for closest, as_on_match, and prior_match are invalid
+
+        Example
+        --------
         >>> calculate_returns(datetime.date(2020, 1, 1), years=1)
         """
 
-        try:
-            current = self.time_series[as_on]
-        except KeyError:
-            raise ValueError("As on date not found")
-
-        prev_date = as_on - relativedelta(years=years)
-        if closest == "previous":
-            delta = -1
-        elif closest == "next":
-            delta = 1
-        else:
-            raise ValueError(f"Invalid value for closest parameter: {closest}")
+        as_on_delta, prior_delta = _preprocess_match_options(as_on_match, prior_match, closest)
 
         while True:
-            try:
-                previous = self.time_series[prev_date]
+            current = self.time_series.get(as_on, None)
+            if current is not None:
                 break
-            except KeyError:
-                prev_date = prev_date + relativedelta(days=delta)
+            elif not as_on_delta:
+                raise ValueError("As on date not found")
+            as_on += as_on_delta
+
+        prev_date = as_on - relativedelta(years=years)
+        while True:
+            previous = self.time_series.get(prev_date, None)
+            if previous is not None:
+                break
+            elif not prior_delta:
+                raise ValueError("Previous date not found")
+            prev_date += prior_delta
 
         returns = current / previous
         if compounding:
@@ -235,21 +322,23 @@ class TimeSeries:
         from_date: datetime.date,
         to_date: datetime.date,
         frequency: str = "D",
+        as_on_match: str = 'closest',
+        prior_match: str = 'closest',
         closest: str = "previous",
         compounding: bool = True,
         years: int = 1,
     ) -> List[tuple]:
         """Calculates the rolling return"""
 
-        datediff = (to_date - from_date).days
-        all_dates = set()
-        for i in range(datediff):
-            all_dates.add(from_date + datetime.timedelta(days=i))
-        dates = all_dates.intersection(self.dates)
+        all_dates = create_date_series(from_date, to_date, getattr(AllFrequencies, frequency))
+        dates = set(all_dates)
+        if frequency == AllFrequencies.D:
+            dates = all_dates.intersection(self.dates)
 
         rolling_returns = []
         for i in dates:
-            returns = self.calculate_returns(as_on=i, compounding=compounding, years=years, closest=closest)
+            returns = self.calculate_returns(as_on=i, compounding=compounding, years=years, as_on_match=as_on_match,
+                                             prior_match=prior_match, closest=closest)
             rolling_returns.append((i, returns))
         self.rolling_returns = rolling_returns
         return self.rolling_returns
