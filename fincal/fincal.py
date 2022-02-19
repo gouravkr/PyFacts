@@ -156,13 +156,13 @@ class TimeSeriesCore:
             printable_data_1 = list(self.time_series)[:3]
             printable_data_2 = list(self.time_series)[-3:]
             printable_str = "TimeSeries([{}\n\t...\n\t{}])".format(
-                                ',\n\t'.join([str({i: self.time_series[i]}) for i in printable_data_1]),
-                                ',\n\t'.join([str({i: self.time_series[i]}) for i in printable_data_2])
+                                ',\n\t'.join([str((i, self.time_series[i])) for i in printable_data_1]),
+                                ',\n\t'.join([str((i, self.time_series[i])) for i in printable_data_2])
                                 )
         else:
             printable_data = self.time_series
             printable_str = "TimeSeries([{}])".format(',\n\t'.join(
-                                [str({i: self.time_series[i]}) for i in printable_data]))
+                                [str((i, self.time_series[i])) for i in printable_data]))
         return printable_str
 
     def __str__(self):
@@ -170,19 +170,25 @@ class TimeSeriesCore:
             printable_data_1 = list(self.time_series)[:3]
             printable_data_2 = list(self.time_series)[-3:]
             printable_str = "[{}\n ...\n {}]".format(
-                                ',\n '.join([str({i: self.time_series[i]}) for i in printable_data_1]),
-                                ',\n '.join([str({i: self.time_series[i]}) for i in printable_data_2])
+                                ',\n '.join([str((i, self.time_series[i])) for i in printable_data_1]),
+                                ',\n '.join([str((i, self.time_series[i])) for i in printable_data_2])
                                 )
         else:
             printable_data = self.time_series
-            printable_str = "[{}]".format(',\n '.join([str({i: self.time_series[i]}) for i in printable_data]))
+            printable_str = "[{}]".format(',\n '.join([str((i, self.time_series[i])) for i in printable_data]))
         return printable_str
 
     def __getitem__(self, n):
-        keys = list(self.time_series.keys())
-        key = keys[n]
-        item = self.time_series[key]
-        return key, item
+        all_keys = list(self.time_series.keys())
+        if isinstance(n, int):
+            keys = [all_keys[n]]
+        else:
+            keys = all_keys[n]
+        item = [(key, self.time_series[key]) for key in keys]
+        if len(item) == 1:
+            return item[0]
+
+        return item
 
     def __len__(self):
         return len(self.time_series.keys())
