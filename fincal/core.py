@@ -1,6 +1,7 @@
 import datetime
 from dataclasses import dataclass
-from typing import Dict, Iterable, List, Literal, Tuple, Union
+from msilib import sequence
+from typing import Dict, Iterable, List, Literal, Mapping, Sequence, Tuple, Union
 
 
 @dataclass
@@ -28,17 +29,17 @@ class AllFrequencies:
 
 def _preprocess_timeseries(
     data: Union[
-        List[Iterable[Union[str, datetime.datetime, float]]],
-        List[Dict[str, Union[float, datetime.datetime]]],
-        List[Dict[Union[str, datetime.datetime], float]],
-        Dict[Union[str, datetime.datetime], float]
+        Sequence[Iterable[Union[str, datetime.datetime, float]]],
+        Sequence[Mapping[str, Union[float, datetime.datetime]]],
+        Sequence[Mapping[Union[str, datetime.datetime], float]],
+        Mapping[Union[str, datetime.datetime], float]
     ],
     date_format: str
 ) -> List[Tuple[datetime.datetime, float]]:
     """Converts any type of list to the correct type"""
 
-    if isinstance(data, list):
-        if isinstance(data[0], dict):
+    if isinstance(data, Sequence):
+        if isinstance(data[0], Mapping):
             if len(data[0].keys()) == 2:
                 current_data = [tuple(i.values()) for i in data]
             elif len(data[0].keys()) == 1:
@@ -47,7 +48,7 @@ def _preprocess_timeseries(
                 raise TypeError("Could not parse the data")
             current_data = _preprocess_timeseries(current_data, date_format)
 
-        elif isinstance(data[0], Iterable):
+        elif isinstance(data[0], Sequence):
             if isinstance(data[0][0], str):
                 current_data = []
                 for i in data:
@@ -60,7 +61,7 @@ def _preprocess_timeseries(
         else:
             raise TypeError("Could not parse the data")
 
-    elif isinstance(data, dict):
+    elif isinstance(data, Mapping):
         current_data = [(k, v) for k, v in data.items()]
         current_data = _preprocess_timeseries(current_data, date_format)
 
