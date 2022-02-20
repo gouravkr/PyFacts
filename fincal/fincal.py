@@ -177,10 +177,14 @@ class TimeSeries(TimeSeriesCore):
     ) -> List[tuple]:
         """Calculates the rolling return"""
 
-        all_dates = create_date_series(from_date, to_date, getattr(AllFrequencies, frequency))
-        dates = set(all_dates)
+        try:
+            frequency = getattr(AllFrequencies, frequency)
+        except AttributeError:
+            raise ValueError(f"Invalid argument for frequency {frequency}")
+
+        dates = create_date_series(from_date, to_date, frequency)
         if frequency == AllFrequencies.D:
-            dates = all_dates.intersection(self.dates)
+            dates = [i for i in dates if i in self.time_series]
 
         rolling_returns = []
         for i in dates:
@@ -193,8 +197,8 @@ class TimeSeries(TimeSeriesCore):
                 closest=closest,
             )
             rolling_returns.append((i, returns))
-        self.rolling_returns = rolling_returns
-        return self.rolling_returns
+        rolling_returns.sort()
+        return rolling_returns
 
 
 if __name__ == "__main__":

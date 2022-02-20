@@ -124,11 +124,11 @@ class TimeSeriesCore:
         data = _preprocess_timeseries(data, date_format=date_format)
 
         self.time_series = dict(data)
-        self.dates = set(list(self.time_series))
-        if len(self.dates) != len(data):
+        self.dates = list(self.time_series)
+        if len(self.time_series) != len(data):
             print("Warning: The input data contains duplicate dates which have been ignored.")
-        self.start_date = list(self.time_series)[0]
-        self.end_date = list(self.time_series)[-1]
+        self.start_date = self.dates[0]
+        self.end_date = self.dates[-1]
         self.frequency = getattr(AllFrequencies, frequency)
 
     def __repr__(self):
