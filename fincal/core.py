@@ -1,7 +1,6 @@
 import datetime
 from dataclasses import dataclass
-from msilib import sequence
-from typing import Dict, Iterable, List, Literal, Mapping, Sequence, Tuple, Union
+from typing import Iterable, List, Literal, Mapping, Sequence, Tuple, Union
 
 
 @dataclass
@@ -134,7 +133,9 @@ class TimeSeriesCore:
 
     def __repr__(self):
         if len(self.time_series) > 6:
-            printable_data_1 = list(self.time_series)[:3]
+            iter_f = iter(self.time_series)
+            iter_b = reversed(self.time_series)
+            printable_data_1 = [next(i) for i in iter(dict)]
             printable_data_2 = list(self.time_series)[-3:]
             printable_str = "TimeSeries([{}\n\t...\n\t{}])".format(
                                 ',\n\t'.join([str((i, self.time_series[i])) for i in printable_data_1]),
@@ -160,7 +161,7 @@ class TimeSeriesCore:
         return printable_str
 
     def __getitem__(self, n):
-        all_keys = list(self.time_series.keys())
+        all_keys = list(self.time_series)
         if isinstance(n, int):
             keys = [all_keys[n]]
         else:
@@ -172,7 +173,7 @@ class TimeSeriesCore:
         return item
 
     def __len__(self):
-        return len(self.time_series.keys())
+        return len(self.time_series)
 
     def head(self, n: int = 6):
         keys = list(self.time_series.keys())
