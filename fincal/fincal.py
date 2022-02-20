@@ -5,14 +5,15 @@ from typing import List, Union
 
 from dateutil.relativedelta import relativedelta
 
-from .core import AllFrequencies, Frequency, TimeSeriesCore, _preprocess_match_options
+from .core import AllFrequencies, TimeSeriesCore, _preprocess_match_options
 
 
 def create_date_series(
-    start_date: datetime.datetime, end_date: datetime.datetime, frequency: Frequency, eomonth: bool = False
+    start_date: datetime.datetime, end_date: datetime.datetime, frequency: str, eomonth: bool = False
 ) -> List[datetime.datetime]:
     """Creates a date series using a frequency"""
 
+    frequency = getattr(AllFrequencies, frequency)
     if eomonth and frequency.days < AllFrequencies.M.days:
         raise ValueError(f"eomonth cannot be set to True if frequency is higher than {AllFrequencies.M.name}")
 
@@ -27,7 +28,8 @@ def create_date_series(
                 date = date.replace(day=31)
             else:
                 date = date.replace(day=1).replace(month=date.month+1) - relativedelta(days=1)
-        dates.append(date)
+        if date <= end_date:
+            dates.append(date)
 
     return dates
 
@@ -59,7 +61,7 @@ class TimeSeries(TimeSeriesCore):
         """
 
         eomonth = True if self.frequency.days >= AllFrequencies.M.days else False
-        dates_to_fill = create_date_series(self.start_date, self.end_date, self.frequency, eomonth)
+        dates_to_fill = create_date_series(self.start_date, self.end_date, self.frequency.symbol, eomonth)
 
         new_ts = dict()
         for cur_date in dates_to_fill:
