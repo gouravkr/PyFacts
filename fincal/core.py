@@ -142,13 +142,36 @@ class TimeSeriesCore:
         data = _preprocess_timeseries(data, date_format=date_format)
 
         self.time_series = dict(data)
-        self.dates = list(self.time_series)
         if len(self.time_series) != len(data):
             print("Warning: The input data contains duplicate dates which have been ignored.")
-        self.start_date = self.dates[0]
-        self.end_date = self.dates[-1]
         self.frequency = getattr(AllFrequencies, frequency)
         self.iter_num = -1
+        self._dates = None
+        self._values = None
+        self._start_date = None
+        self._end_date = None
+
+    @property
+    def dates(self):
+        if self._dates is None or len(self._dates) != len(self.time_series):
+            self._dates = list(self.time_series.keys())
+
+        return self._dates
+
+    @property
+    def values(self):
+        if self._values is None or len(self._values) != len(self.time_series):
+            self._values = list(self.time_series.values())
+
+        return self._values
+
+    @property
+    def start_date(self):
+        return self.dates[0]
+
+    @property
+    def end_date(self):
+        return self.dates[-1]
 
     def _get_printable_slice(self, n: int):
         """Returns a slice of the dataframe from beginning and end"""
@@ -199,6 +222,10 @@ class TimeSeriesCore:
         elif isinstance(key, datetime.datetime):
             item = (key, self.time_series[key])
         if isinstance(key, str):
+            if key == 'dates':
+                return self.dates
+            elif key == 'values':
+                return list(self.time_series.values())
             try:
                 dt_key = datetime.datetime.strptime(key, FincalOptions.date_format)
                 item = (dt_key, self.time_series[dt_key])
