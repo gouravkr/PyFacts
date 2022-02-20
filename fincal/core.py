@@ -148,6 +148,7 @@ class TimeSeriesCore:
         self.start_date = self.dates[0]
         self.end_date = self.dates[-1]
         self.frequency = getattr(AllFrequencies, frequency)
+        self.iter_num = -1
 
     def _get_printable_slice(self, n: int):
         """Returns a slice of the dataframe from beginning and end"""
@@ -214,6 +215,18 @@ class TimeSeriesCore:
 
     def __len__(self):
         return len(self.time_series)
+
+    def __iter__(self):
+        self.n = 0
+        return self
+
+    def __next__(self):
+        if self.n >= len(self.dates):
+            raise StopIteration
+        else:
+            key = self.dates[self.n]
+            self.n += 1
+            return key, self.time_series[key]
 
     def head(self, n: int = 6):
         """Returns the first n items of the TimeSeries object"""
