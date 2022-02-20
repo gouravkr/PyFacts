@@ -77,23 +77,39 @@ class TimeSeries(TimeSeriesCore):
 
         return new_ts
 
-    def bfill(self, inplace=False):
-        num_days = (self.end_date - self.start_date).days + 1
+    def bfill(self, inplace: bool = False, limit: int = None) -> Union[TimeSeries, None]:
+        """Backward fill missing dates in the time series
 
-        new_ts = dict()
-        for i in range(num_days):
-            cur_date = self.end_date - datetime.timedelta(days=i)
+        Parameters
+        ----------
+        inplace : bool
+            Modify the time-series data in place and return None.
+
+        limit : int, optional
+            Maximum number of periods to back fill
+
+        Returns
+        -------
+            Returns a TimeSeries object if inplace is False, otherwise None
+        """
+
+        eomonth = True if self.frequency.days >= AllFrequencies.M.days else False
+        dates_to_fill = create_date_series(self.start_date, self.end_date, self.frequency.symbol, eomonth)
+        dates_to_fill.append(self.end_date)
+
+        bfill_ts = dict()
+        for cur_date in reversed(dates_to_fill):
             try:
                 cur_val = self.time_series[cur_date]
             except KeyError:
                 pass
-            new_ts.update({cur_date: cur_val})
-
+            bfill_ts.update({cur_date: cur_val})
+        new_ts = {k: bfill_ts[k] for k in reversed(bfill_ts)}
         if inplace:
             self.time_series = new_ts
             return None
 
-        return dict(reversed(new_ts.items()))
+        return new_ts
 
     def calculate_returns(
         self,
