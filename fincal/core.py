@@ -1,5 +1,6 @@
 import datetime
 from dataclasses import dataclass
+from numbers import Number
 from typing import Iterable, List, Literal, Mapping, Sequence, Tuple, Union
 
 
@@ -111,6 +112,67 @@ class IndexSlicer:
         return item
 
 
+class Series:
+    def __init__(self, data):
+        if not isinstance(data, Sequence):
+            raise TypeError("Series only supports creation using Sequence types")
+
+        if isinstance(data[0], bool):
+            self.data = data
+            self.dtype = bool
+        elif isinstance(data[0], Number):
+            self.dtype = float
+            self.data = [float(i) for i in data]
+        elif isinstance(data[0], str):
+            try:
+                data = [datetime.datetime.strptime(i, FincalOptions.date_format) for i in data]
+                self.dtype = datetime.datetime
+            except ValueError:
+                raise TypeError("Series does not support string data type")
+        elif isinstance(data[0], datetime.datetime):
+            self.dtype = datetime.datetime
+            self.data = data
+        else:
+            raise TypeError(f"Cannot create series object from {type(data).__name__} of {type(data[0]).__name__}")
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self.data})"
+
+    def __getitem__(self, n):
+        return self.data[n]
+
+    def __len__(self):
+        return len(self.data)
+
+    def __gt__(self, other):
+        if self.dtype == bool:
+            raise TypeError("> not supported for boolean series")
+
+        if self.dtype == float and isinstance(other, Number) or isinstance(other, self.dtype):
+            gt = Series([i > other for i in self.data])
+        else:
+            raise Exception(f"Cannot compare type {self.dtype.__name__} to {type(other).__name__}")
+
+        return gt
+
+    def __lt__(self, other):
+        if self.dtype == bool:
+            raise TypeError("< not supported for boolean series")
+
+        if self.dtype == float and isinstance(other, Number) or isinstance(other, self.dtype):
+            lt = Series([i < other for i in self.data])
+        else:
+            raise Exception(f"Cannot compare type {self.dtype.__name__} to {type(other).__name__}")
+        return lt
+
+    def __eq__(self, other):
+        if self.dtype == float and isinstance(other, Number) or isinstance(other, self.dtype):
+            eq = Series([i == other for i in self.data])
+        else:
+            raise Exception(f"Cannot compare type {self.dtype.__name__} to {type(other).__name__}")
+        return eq
+
+
 class TimeSeriesCore:
     """Defines the core building blocks of a TimeSeries object"""
 
@@ -156,14 +218,14 @@ class TimeSeriesCore:
         if self._dates is None or len(self._dates) != len(self.time_series):
             self._dates = list(self.time_series.keys())
 
-        return self._dates
+        return Series(self._dates)
 
     @property
     def values(self):
         if self._values is None or len(self._values) != len(self.time_series):
             self._values = list(self.time_series.values())
 
-        return self._values
+        return Series(self._values)
 
     @property
     def start_date(self):
@@ -217,6 +279,16 @@ class TimeSeriesCore:
         return printable_str
 
     def __getitem__(self, key):
+        if isinstance(key, Series):
+            if not key.dtype == bool:
+                raise ValueError(f"Cannot slice {self.__class__.__name__} using a Series of {key.dtype.__name__}")
+            elif len(key) != len(self.dates):
+                raise Exception(f"Length of Series: {len(key)} did not match length of object: {len(self.dates)}")
+            else:
+                dates_to_return = [self.dates[i] for i, j in enumerate(key) if j]
+                data_to_return = [(key, self.time_series[key]) for key in dates_to_return]
+                return TimeSeriesCore(data_to_return)
+
         if isinstance(key, int):
             raise KeyError(f"{key}. For index based slicing, use .iloc[{key}]")
         elif isinstance(key, datetime.datetime):
