@@ -75,7 +75,7 @@ class TimeSeries(TimeSeriesCore):
             self.time_series = new_ts
             return None
 
-        return new_ts
+        return TimeSeries(new_ts, frequency=self.frequency.symbol)
 
     def bfill(self, inplace: bool = False, limit: int = None) -> Union[TimeSeries, None]:
         """Backward fill missing dates in the time series
@@ -109,7 +109,7 @@ class TimeSeries(TimeSeriesCore):
             self.time_series = new_ts
             return None
 
-        return new_ts
+        return TimeSeries(new_ts, frequency=self.frequency.symbol)
 
     def calculate_returns(
         self,
