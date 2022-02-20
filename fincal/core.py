@@ -15,15 +15,16 @@ class Frequency:
     freq_type: str
     value: int
     days: int
+    symbol: str
 
 
 class AllFrequencies:
-    D = Frequency('daily', 'days', 1, 1)
-    W = Frequency('weekly', 'days', 7, 7)
-    M = Frequency('monthly', 'months', 1, 30)
-    Q = Frequency('quarterly', 'months', 3, 91)
-    H = Frequency('half-yearly', 'months', 6, 182)
-    Y = Frequency('annual', 'years', 1, 365)
+    D = Frequency('daily', 'days', 1, 1, 'D')
+    W = Frequency('weekly', 'days', 7, 7, 'W')
+    M = Frequency('monthly', 'months', 1, 30, 'M')
+    Q = Frequency('quarterly', 'months', 3, 91, 'Q')
+    H = Frequency('half-yearly', 'months', 6, 182, 'H')
+    Y = Frequency('annual', 'years', 1, 365, 'Y')
 
 
 def _preprocess_timeseries(
@@ -99,8 +100,8 @@ class TimeSeriesCore:
     def __init__(
         self,
         data: List[Iterable],
-        date_format: str = "%Y-%m-%d",
-        frequency=Literal['D', 'W', 'M', 'Q', 'H', 'Y']
+        frequency: Literal['D', 'W', 'M', 'Q', 'H', 'Y'],
+        date_format: str = "%Y-%m-%d"
     ):
         """Instantiate a TimeSeries object
 
@@ -131,33 +132,47 @@ class TimeSeriesCore:
         self.end_date = self.dates[-1]
         self.frequency = getattr(AllFrequencies, frequency)
 
+    def _get_slice(self, n: int):
+        """Returns a slice of the dataframe from beginning and end"""
+
+        printable = {}
+        iter_f = iter(self.time_series)
+        first_n = [next(iter_f) for i in range(n//2)]
+
+        iter_b = reversed(self.time_series)
+        last_n = [next(iter_b) for i in range(n//2)]
+        last_n.sort()
+
+        printable['start'] = [str((i, self.time_series[i])) for i in first_n]
+        printable['end'] = [str((i, self.time_series[i])) for i in last_n]
+        return printable
+
     def __repr__(self):
         if len(self.time_series) > 6:
-            iter_f = iter(self.time_series)
-            iter_b = reversed(self.time_series)
-            printable_data_1 = [next(i) for i in iter(dict)]
-            printable_data_2 = list(self.time_series)[-3:]
-            printable_str = "TimeSeries([{}\n\t...\n\t{}])".format(
-                                ',\n\t'.join([str((i, self.time_series[i])) for i in printable_data_1]),
-                                ',\n\t'.join([str((i, self.time_series[i])) for i in printable_data_2])
+            printable = self._get_slice(6)
+            printable_str = "{}([{}\n\t    ...\n\t    {}], frequency={})".format(
+                                self.__class__.__name__,
+                                ',\n\t    '.join(printable['start']),
+                                ',\n\t    '.join(printable['end']),
+                                repr(self.frequency.symbol)
                                 )
         else:
-            printable_data = self.time_series
-            printable_str = "TimeSeries([{}])".format(',\n\t'.join(
-                                [str((i, self.time_series[i])) for i in printable_data]))
+            printable_str = "{}([{}], frequency={})".format(
+                                              self.__class__.__name__,
+                                              ',\n\t'.join([str(i) for i in self.time_series.items()]),
+                                              repr(self.frequency.symbol)
+                                             )
         return printable_str
 
     def __str__(self):
         if len(self.time_series) > 6:
-            printable_data_1 = list(self.time_series)[:3]
-            printable_data_2 = list(self.time_series)[-3:]
+            printable = self._get_slice(6)
             printable_str = "[{}\n ...\n {}]".format(
-                                ',\n '.join([str((i, self.time_series[i])) for i in printable_data_1]),
-                                ',\n '.join([str((i, self.time_series[i])) for i in printable_data_2])
+                                ',\n '.join(printable['start']),
+                                ',\n '.join(printable['end']),
                                 )
         else:
-            printable_data = self.time_series
-            printable_str = "[{}]".format(',\n '.join([str((i, self.time_series[i])) for i in printable_data]))
+            printable_str = "[{}]".format(',\n '.join([str(i) for i in self.time_series.items()]))
         return printable_str
 
     def __getitem__(self, n):
