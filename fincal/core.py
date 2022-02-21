@@ -2,7 +2,7 @@ import datetime
 from collections import UserDict, UserList
 from dataclasses import dataclass
 from numbers import Number
-from typing import Iterable, List, Literal, Mapping, Sequence, Tuple, Union
+from typing import Iterable, List, Literal, Mapping, Sequence, Tuple, Type, Union
 
 
 @dataclass
@@ -132,30 +132,26 @@ class _IndexSlicer:
 
 
 class Series(UserList):
-    def __init__(self, data):
-        if not isinstance(data, Sequence):
-            raise TypeError("Series only supports creation using Sequence types")
+    """Container for a series of objects, all objects must be of the same type"""
 
-        if isinstance(data[0], bool):
-            self.data = data
-            self.dtype = bool
-        elif isinstance(data[0], Number):
-            self.dtype = float
-            self.data = [float(i) for i in data]
-        elif isinstance(data[0], str):
-            try:
-                data = [datetime.datetime.strptime(i, FincalOptions.date_format) for i in data]
-                self.dtype = datetime.datetime
-            except ValueError:
-                raise TypeError(
-                    "Series does not support string data type except dates.\n"
-                    "Hint: Try setting the date format using FincalOptions.date_format"
-                )
-        elif isinstance(data[0], (datetime.datetime, datetime.date)):
-            self.dtype = datetime.datetime
-            self.data = [_parse_date(i) for i in data]
-        else:
-            raise TypeError(f"Cannot create series object from {type(data).__name__} of {type(data[0]).__name__}")
+    def __init__(
+        self,
+        data,
+        data_type: Union[Type[bool], Type[float], Type[str], Type[datetime.datetime]],
+        date_format: str = None,
+    ):
+        self.dtype = data_type
+        if not isinstance(data, Sequence):
+            raise TypeError("Series object can only be created using Sequence types")
+
+        for i in data:
+            if not isinstance(i, data_type):
+                raise Exception("All arguments must be of the same type")
+
+        if data_type == str:
+            data = [_parse_date(i, date_format) for i in data]
+
+        self.data = data
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.data})"
@@ -168,7 +164,7 @@ class Series(UserList):
             other = _parse_date(other)
 
         if self.dtype == float and isinstance(other, Number) or isinstance(other, self.dtype):
-            gt = Series([i > other for i in self.data])
+            gt = Series([i > other for i in self.data], bool)
         else:
             raise Exception(f"Cannot compare type {self.dtype.__name__} to {type(other).__name__}")
 
@@ -179,14 +175,14 @@ class Series(UserList):
             raise TypeError("< not supported for boolean series")
 
         if self.dtype == float and isinstance(other, Number) or isinstance(other, self.dtype):
-            lt = Series([i < other for i in self.data])
+            lt = Series([i < other for i in self.data], bool)
         else:
             raise Exception(f"Cannot compare type {self.dtype.__name__} to {type(other).__name__}")
         return lt
 
     def __eq__(self, other):
         if self.dtype == float and isinstance(other, Number) or isinstance(other, self.dtype):
-            eq = Series([i == other for i in self.data])
+            eq = Series([i == other for i in self.data], bool)
         else:
             raise Exception(f"Cannot compare type {self.dtype.__name__} to {type(other).__name__}")
         return eq
@@ -234,14 +230,14 @@ class TimeSeriesCore(UserDict):
         if self._dates is None or len(self._dates) != len(self.data):
             self._dates = list(self.data.keys())
 
-        return Series(self._dates)
+        return Series(self._dates, datetime.datetime)
 
     @property
     def values(self):
         if self._values is None or len(self._values) != len(self.data):
             self._values = list(self.data.values())
 
-        return Series(self._values)
+        return Series(self._values, float)
 
     @property
     def start_date(self):
@@ -325,9 +321,6 @@ class TimeSeriesCore(UserDict):
         else:
             raise TypeError(f"Invalid type {repr(type(key).__name__)} for slicing.")
         return item
-
-    def __len__(self):
-        return len(self.data)
 
     def __iter__(self):
         self.n = 0
