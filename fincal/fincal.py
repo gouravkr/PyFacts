@@ -225,7 +225,7 @@ class TimeSeries(TimeSeriesCore):
             )
             rolling_returns.append((i, returns))
         rolling_returns.sort()
-        return rolling_returns
+        return self.__class__(rolling_returns, self.frequency.symbol)
 
 
 if __name__ == "__main__":
