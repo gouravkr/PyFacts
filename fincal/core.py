@@ -108,9 +108,9 @@ def _parse_date(date: str, date_format: str = None):
     try:
         date = datetime.datetime.strptime(date, date_format)
     except TypeError:
-        raise Exception("Date does not seem to be valid date-like string")
+        raise ValueError("Date does not seem to be valid date-like string")
     except ValueError:
-        raise Exception("Date could not be parsed. Have you set the correct date format in FincalOptions.date_format?")
+        raise ValueError("Date could not be parsed. Have you set the correct date format in FincalOptions.date_format?")
     return date
 
 
@@ -155,6 +155,12 @@ class Series(UserList):
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.data})"
+
+    def __getitem__(self, i):
+        if isinstance(i, slice):
+            return self.__class__(self.data[i], self.dtype)
+        else:
+            return self.data[i]
 
     def __gt__(self, other):
         if self.dtype == bool:
@@ -299,7 +305,7 @@ class TimeSeriesCore(UserDict):
             else:
                 dates_to_return = [self.dates[i] for i, j in enumerate(key) if j]
                 data_to_return = [(key, self.data[key]) for key in dates_to_return]
-                return TimeSeriesCore(data_to_return, frequency=self.frequency.symbol)
+                return self.__class__(data_to_return, frequency=self.frequency.symbol)
 
         if isinstance(key, int):
             raise KeyError(f"{key}. For index based slicing, use .iloc[{key}]")
