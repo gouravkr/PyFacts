@@ -95,7 +95,7 @@ def _preprocess_match_options(as_on_match: str, prior_match: str, closest: str) 
     return as_on_delta, prior_delta
 
 
-class IndexSlicer:
+class _IndexSlicer:
     def __init__(self, parent_obj):
         self.parent = parent_obj
 
@@ -128,7 +128,8 @@ class Series:
                 data = [datetime.datetime.strptime(i, FincalOptions.date_format) for i in data]
                 self.dtype = datetime.datetime
             except ValueError:
-                raise TypeError("Series does not support string data type")
+                raise TypeError("Series does not support string data type except dates.\n"
+                                "Hint: Try setting the date format using FincalOptions.date_format")
         elif isinstance(data[0], datetime.datetime):
             self.dtype = datetime.datetime
             self.data = data
@@ -297,7 +298,7 @@ class TimeSeriesCore:
             if key == 'dates':
                 return self.dates
             elif key == 'values':
-                return list(self.time_series.values())
+                return self.values
             try:
                 dt_key = datetime.datetime.strptime(key, FincalOptions.date_format)
                 item = (dt_key, self.time_series[dt_key])
@@ -347,4 +348,4 @@ class TimeSeriesCore:
     def iloc(self):
         """Returns an item or a set of items based on index"""
 
-        return IndexSlicer(self)
+        return _IndexSlicer(self)
