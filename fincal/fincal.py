@@ -40,7 +40,7 @@ class TimeSeries(TimeSeriesCore):
     def info(self):
         """Summary info about the TimeSeries object"""
 
-        total_dates = len(self.time_series.keys())
+        total_dates = len(self.data.keys())
         res_string = "First date: {}\nLast date: {}\nNumber of rows: {}"
         return res_string.format(self.start_date, self.end_date, total_dates)
 
@@ -66,13 +66,13 @@ class TimeSeries(TimeSeriesCore):
         new_ts = dict()
         for cur_date in dates_to_fill:
             try:
-                cur_val = self.time_series[cur_date]
+                cur_val = self.data[cur_date]
             except KeyError:
                 pass
             new_ts.update({cur_date: cur_val})
 
         if inplace:
-            self.time_series = new_ts
+            self.data = new_ts
             return None
 
         return TimeSeries(new_ts, frequency=self.frequency.symbol)
@@ -100,13 +100,13 @@ class TimeSeries(TimeSeriesCore):
         bfill_ts = dict()
         for cur_date in reversed(dates_to_fill):
             try:
-                cur_val = self.time_series[cur_date]
+                cur_val = self.data[cur_date]
             except KeyError:
                 pass
             bfill_ts.update({cur_date: cur_val})
         new_ts = {k: bfill_ts[k] for k in reversed(bfill_ts)}
         if inplace:
-            self.time_series = new_ts
+            self.data = new_ts
             return None
 
         return TimeSeries(new_ts, frequency=self.frequency.symbol)
@@ -163,7 +163,7 @@ class TimeSeries(TimeSeriesCore):
         as_on_delta, prior_delta = _preprocess_match_options(as_on_match, prior_match, closest)
 
         while True:
-            current = self.time_series.get(as_on, None)
+            current = self.data.get(as_on, None)
             if current is not None:
                 break
             elif not as_on_delta:
@@ -172,7 +172,7 @@ class TimeSeries(TimeSeriesCore):
 
         prev_date = as_on - relativedelta(years=years)
         while True:
-            previous = self.time_series.get(prev_date, None)
+            previous = self.data.get(prev_date, None)
             if previous is not None:
                 break
             elif not prior_delta:
@@ -211,7 +211,7 @@ class TimeSeries(TimeSeriesCore):
 
         dates = create_date_series(from_date, to_date, frequency.symbol)
         if frequency == AllFrequencies.D:
-            dates = [i for i in dates if i in self.time_series]
+            dates = [i for i in dates if i in self.data]
 
         rolling_returns = []
         for i in dates:
