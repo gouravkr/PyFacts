@@ -200,7 +200,7 @@ class TimeSeries(TimeSeriesCore):
         except AttributeError:
             raise ValueError(f"Invalid argument for frequency {frequency}")
 
-        dates = create_date_series(from_date, to_date, frequency)
+        dates = create_date_series(from_date, to_date, frequency.symbol)
         if frequency == AllFrequencies.D:
             dates = [i for i in dates if i in self.time_series]
 
