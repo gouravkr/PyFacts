@@ -115,16 +115,17 @@ def _parse_date(date: str, date_format: str = None):
 
 
 class _IndexSlicer:
+    """Class to create a slice using iloc in TimeSeriesCore"""
+
     def __init__(self, parent_obj):
         self.parent = parent_obj
 
     def __getitem__(self, n):
-        all_keys = list(self.parent.time_series)
         if isinstance(n, int):
-            keys = [all_keys[n]]
+            keys = [self.parent.dates[n]]
         else:
-            keys = all_keys[n]
-        item = [(key, self.parent.time_series[key]) for key in keys]
+            keys = self.parent.dates[n]
+        item = [(key, self.parent.data[key]) for key in keys]
         if len(item) == 1:
             return item[0]
 
