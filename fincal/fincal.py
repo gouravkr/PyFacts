@@ -17,6 +17,8 @@ def create_date_series(
     if eomonth and frequency.days < AllFrequencies.M.days:
         raise ValueError(f"eomonth cannot be set to True if frequency is higher than {AllFrequencies.M.name}")
 
+    start_date = _parse_date(start_date)
+    end_date = _parse_date(end_date)
     datediff = (end_date - start_date).days / frequency.days + 1
     dates = []
 
