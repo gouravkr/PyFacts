@@ -40,10 +40,10 @@ class TestAllFrequencies:
 
 class TestSeries:
     def test_creation(self):
-        series = Series([1, 2, 3, 4, 5, 6, 7], data_type=int)
+        series = Series([1, 2, 3, 4, 5, 6, 7], data_type='number')
         assert series.dtype == float
         assert series[2] == 3
 
-        dates = create_date_series('2021-01-01', '2021-01-31', 'D')
-        series = Series(dates, data_type=datetime.datetime)
-        assert Series.dtype == datetime.datetime
+        dates = create_date_series('2021-01-01', '2021-01-31', frequency='D')
+        series = Series(dates, data_type='date')
+        assert series.dtype == datetime.datetime
