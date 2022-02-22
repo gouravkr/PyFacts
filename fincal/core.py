@@ -162,16 +162,12 @@ class Series(UserList):
         else:
             func = types_dict[data_type]
             data = [func(i) for i in data]
-        # elif data_type == 'number':
-        #     data = [float(i) for i in data]
-        # elif data_type == 'boolean':
-        #     data = [bool(i) for i in data]
 
         self.dtype = types_dict[data_type]
         self.data = data
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({self.data})"
+        return f"{self.__class__.__name__}({self.data}, data_type='{self.data_type.__name__}')"
 
     def __getitem__(self, i):
         if isinstance(i, slice):
