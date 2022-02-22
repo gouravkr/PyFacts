@@ -4,7 +4,7 @@ import random
 from typing import Literal, Sequence
 
 import pytest
-from fincal.core import AllFrequencies, Frequency, Series
+from fincal.core import Frequency, Series
 from fincal.fincal import TimeSeries, create_date_series
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -18,8 +18,8 @@ def create_test_data(
     gaps: float,
     month_position: Literal["start", "middle", "end"],
     date_as_str: bool,
-    as_outer_type: Literal['dict', 'list'] = 'list',
-    as_inner_type: Literal['dict', 'list', 'tuple'] = 'tuple'
+    as_outer_type: Literal["dict", "list"] = "list",
+    as_inner_type: Literal["dict", "list", "tuple"] = "tuple",
 ) -> Sequence[tuple]:
     start_dates = {
         "start": datetime.datetime(2016, 1, 1),
@@ -35,56 +35,22 @@ def create_test_data(
         for i in to_remove:
             dates.remove(i)
     if date_as_str:
-        dates = [i.strftime('%Y-%m-%d') for i in dates]
+        dates = [i.strftime("%Y-%m-%d") for i in dates]
 
-    values = [random.randint(8000, 90000)/100 for _ in dates]
+    values = [random.randint(8000, 90000) / 100 for _ in dates]
 
     data = list(zip(dates, values))
-    if as_outer_type == 'list':
-        if as_inner_type == 'list':
+    if as_outer_type == "list":
+        if as_inner_type == "list":
             data = [list(i) for i in data]
-        elif as_inner_type == 'dict[1]':
+        elif as_inner_type == "dict[1]":
             data = [dict((i,)) for i in data]
-        elif as_inner_type == 'dict[2]':
+        elif as_inner_type == "dict[2]":
             data = [dict(date=i, value=j) for i, j in data]
-    elif as_outer_type == 'dict':
+    elif as_outer_type == "dict":
         data = dict(data)
 
     return data
-
-
-class TestFrequency:
-    def test_creation(self):
-        D = Frequency('daily', 'days', 1, 1, 'D')
-        assert D.days == 1
-        assert D.symbol == 'D'
-        assert D.name == 'daily'
-        assert D.value == 1
-        assert D.freq_type == 'days'
-
-
-class TestAllFrequencies:
-    def test_attributes(self):
-        assert hasattr(AllFrequencies, 'D')
-        assert hasattr(AllFrequencies, 'M')
-        assert hasattr(AllFrequencies, 'Q')
-
-    def test_days(self):
-        assert AllFrequencies.D.days == 1
-        assert AllFrequencies.M.days == 30
-        assert AllFrequencies.Q.days == 91
-
-    def test_symbol(self):
-        assert AllFrequencies.H.symbol == 'H'
-        assert AllFrequencies.W.symbol == 'W'
-
-    def test_values(self):
-        assert AllFrequencies.H.value == 6
-        assert AllFrequencies.Y.value == 1
-
-    def test_type(self):
-        assert AllFrequencies.Q.freq_type == 'months'
-        assert AllFrequencies.W.freq_type == 'days'
 
 
 class TestDateSeries:
@@ -151,7 +117,7 @@ class TestDateSeries:
 
 class TestFincal:
     def test_creation(self):
-        data = create_test_data(frequency='D', eomonth=False, n=50, gaps=0, month_position='start', date_as_str=True)
+        data = create_test_data(frequency="D", eomonth=False, n=50, gaps=0, month_position="start", date_as_str=True)
         time_series = TimeSeries(data, frequency="D")
         assert len(time_series) == 50
         assert isinstance(time_series.frequency, Frequency)
@@ -160,12 +126,12 @@ class TestFincal:
         ffill_data = time_series.ffill()
         assert len(ffill_data) == 50
 
-        data = create_test_data(frequency='D', eomonth=False, n=500, gaps=0.1, month_position='start', date_as_str=True)
+        data = create_test_data(frequency="D", eomonth=False, n=500, gaps=0.1, month_position="start", date_as_str=True)
         time_series = TimeSeries(data, frequency="D")
         assert len(time_series) == 450
 
     def test_ffill(self):
-        data = create_test_data(frequency='D', eomonth=False, n=500, gaps=0.1, month_position='start', date_as_str=True)
+        data = create_test_data(frequency="D", eomonth=False, n=500, gaps=0.1, month_position="start", date_as_str=True)
         time_series = TimeSeries(data, frequency="D")
         ffill_data = time_series.ffill()
         assert len(ffill_data) >= 498
@@ -175,7 +141,7 @@ class TestFincal:
         assert len(time_series) >= 498
 
     def test_iloc_slicing(self):
-        data = create_test_data(frequency='D', eomonth=False, n=50, gaps=0, month_position='start', date_as_str=True)
+        data = create_test_data(frequency="D", eomonth=False, n=50, gaps=0, month_position="start", date_as_str=True)
         time_series = TimeSeries(data, frequency="D")
         assert time_series.iloc[0] is not None
         assert time_series.iloc[:3] is not None
@@ -185,11 +151,11 @@ class TestFincal:
         assert len(time_series.iloc[10:20]) == 10
 
     def test_key_slicing(self):
-        data = create_test_data(frequency='D', eomonth=False, n=50, gaps=0, month_position='start', date_as_str=True)
+        data = create_test_data(frequency="D", eomonth=False, n=50, gaps=0, month_position="start", date_as_str=True)
         time_series = TimeSeries(data, frequency="D")
         available_date = time_series.iloc[5][0]
         assert time_series[available_date] is not None
-        assert isinstance(time_series['dates'], Series)
-        assert isinstance(time_series['values'], Series)
+        assert isinstance(time_series["dates"], Series)
+        assert isinstance(time_series["values"], Series)
         assert len(time_series.dates) == 50
         assert len(time_series.values) == 50
