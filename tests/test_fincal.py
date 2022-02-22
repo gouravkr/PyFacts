@@ -4,7 +4,7 @@ import random
 from typing import Literal, Sequence
 
 import pytest
-from fincal.core import Frequency
+from fincal.core import AllFrequencies, Frequency, Series
 from fincal.fincal import TimeSeries, create_date_series
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -51,6 +51,40 @@ def create_test_data(
         data = dict(data)
 
     return data
+
+
+class TestFrequency:
+    def test_creation(self):
+        D = Frequency('daily', 'days', 1, 1, 'D')
+        assert D.days == 1
+        assert D.symbol == 'D'
+        assert D.name == 'daily'
+        assert D.value == 1
+        assert D.freq_type == 'days'
+
+
+class TestAllFrequencies:
+    def test_attributes(self):
+        assert hasattr(AllFrequencies, 'D')
+        assert hasattr(AllFrequencies, 'M')
+        assert hasattr(AllFrequencies, 'Q')
+
+    def test_days(self):
+        assert AllFrequencies.D.days == 1
+        assert AllFrequencies.M.days == 30
+        assert AllFrequencies.Q.days == 91
+
+    def test_symbol(self):
+        assert AllFrequencies.H.symbol == 'H'
+        assert AllFrequencies.W.symbol == 'W'
+
+    def test_values(self):
+        assert AllFrequencies.H.value == 6
+        assert AllFrequencies.Y.value == 1
+
+    def test_type(self):
+        assert AllFrequencies.Q.freq_type == 'months'
+        assert AllFrequencies.W.freq_type == 'days'
 
 
 class TestDateSeries:
@@ -134,18 +168,28 @@ class TestFincal:
         data = create_test_data(frequency='D', eomonth=False, n=500, gaps=0.1, month_position='start', date_as_str=True)
         time_series = TimeSeries(data, frequency="D")
         ffill_data = time_series.ffill()
-        assert len(ffill_data) > 498
+        assert len(ffill_data) >= 498
 
         ffill_data = time_series.ffill(inplace=True)
         assert ffill_data is None
-        assert len(time_series) > 498
+        assert len(time_series) >= 498
 
-    def test_slicing(self):
+    def test_iloc_slicing(self):
         data = create_test_data(frequency='D', eomonth=False, n=50, gaps=0, month_position='start', date_as_str=True)
         time_series = TimeSeries(data, frequency="D")
-        assert time_series[0] is not None
-        assert time_series[:3] is not None
-        assert time_series[5:7] is not None
-        assert isinstance(time_series[0], tuple)
-        assert isinstance(time_series[10:20], list)
-        assert len(time_series[10:20]) == 10
+        assert time_series.iloc[0] is not None
+        assert time_series.iloc[:3] is not None
+        assert time_series.iloc[5:7] is not None
+        assert isinstance(time_series.iloc[0], tuple)
+        assert isinstance(time_series.iloc[10:20], list)
+        assert len(time_series.iloc[10:20]) == 10
+
+    def test_key_slicing(self):
+        data = create_test_data(frequency='D', eomonth=False, n=50, gaps=0, month_position='start', date_as_str=True)
+        time_series = TimeSeries(data, frequency="D")
+        available_date = time_series.iloc[5][0]
+        assert time_series[available_date] is not None
+        assert isinstance(time_series['dates'], Series)
+        assert isinstance(time_series['values'], Series)
+        assert len(time_series.dates) == 50
+        assert len(time_series.values) == 50
