@@ -98,7 +98,7 @@ def _preprocess_match_options(as_on_match: str, prior_match: str, closest: str) 
 
 def _parse_date(date: str, date_format: str = None):
     """Parses date and handles errors"""
-
+    print("Printing the dates", date, type(date))
     if isinstance(date, (datetime.datetime, datetime.date)):
         return datetime.datetime.fromordinal(date.toordinal())
 
@@ -167,7 +167,7 @@ class Series(UserList):
         self.data = data
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({self.data}, data_type='{self.data_type.__name__}')"
+        return f"{self.__class__.__name__}({self.data}, data_type='{self.dtype.__name__}')"
 
     def __getitem__(self, i):
         if isinstance(i, slice):
@@ -402,6 +402,9 @@ class TimeSeriesCore(UserDict):
         keys = keys[-n:]
         result = [(key, self.data[key]) for key in keys]
         return result
+
+    def items(self):
+        return self.data.items()
 
     @property
     def iloc(self):
