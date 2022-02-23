@@ -98,7 +98,7 @@ def _preprocess_match_options(as_on_match: str, prior_match: str, closest: str) 
 
 def _parse_date(date: str, date_format: str = None):
     """Parses date and handles errors"""
-    print("Printing the dates", date, type(date))
+
     if isinstance(date, (datetime.datetime, datetime.date)):
         return datetime.datetime.fromordinal(date.toordinal())
 
@@ -138,17 +138,17 @@ class Series(UserList):
     def __init__(
         self,
         data,
-        data_type: Literal['date', 'number', 'bool'],
+        data_type: Literal["date", "number", "bool"],
         date_format: str = None,
     ):
         types_dict = {
-            'date': datetime.datetime,
-            'datetime': datetime.datetime,
-            'datetime.datetime': datetime.datetime,
-            'float': float,
-            'int': float,
-            'number': float,
-            'bool': bool
+            "date": datetime.datetime,
+            "datetime": datetime.datetime,
+            "datetime.datetime": datetime.datetime,
+            "float": float,
+            "int": float,
+            "number": float,
+            "bool": bool,
         }
 
         if data_type not in types_dict.keys():
@@ -157,7 +157,7 @@ class Series(UserList):
         if not isinstance(data, Sequence):
             raise TypeError("Series object can only be created using Sequence types")
 
-        if data_type in ['date', 'datetime', 'datetime.datetime']:
+        if data_type in ["date", "datetime", "datetime.datetime"]:
             data = [_parse_date(i, date_format) for i in data]
         else:
             func = types_dict[data_type]
@@ -183,7 +183,7 @@ class Series(UserList):
             other = _parse_date(other)
 
         if self.dtype == float and isinstance(other, Number) or isinstance(other, self.dtype):
-            gt = Series([i > other for i in self.data], 'bool')
+            gt = Series([i > other for i in self.data], "bool")
         else:
             raise Exception(f"Cannot compare type {self.dtype.__name__} to {type(other).__name__}")
 
@@ -197,7 +197,7 @@ class Series(UserList):
             other = _parse_date(other)
 
         if self.dtype == float and isinstance(other, Number) or isinstance(other, self.dtype):
-            ge = Series([i >= other for i in self.data], 'bool')
+            ge = Series([i >= other for i in self.data], "bool")
         else:
             raise Exception(f"Cannot compare type {self.dtype.__name__} to {type(other).__name__}")
 
@@ -211,7 +211,7 @@ class Series(UserList):
             other = _parse_date(other)
 
         if self.dtype == float and isinstance(other, Number) or isinstance(other, self.dtype):
-            lt = Series([i < other for i in self.data], 'bool')
+            lt = Series([i < other for i in self.data], "bool")
         else:
             raise Exception(f"Cannot compare type {self.dtype.__name__} to {type(other).__name__}")
         return lt
@@ -224,7 +224,7 @@ class Series(UserList):
             other = _parse_date(other)
 
         if self.dtype == float and isinstance(other, Number) or isinstance(other, self.dtype):
-            le = Series([i <= other for i in self.data], 'bool')
+            le = Series([i <= other for i in self.data], "bool")
         else:
             raise Exception(f"Cannot compare type {self.dtype.__name__} to {type(other).__name__}")
         return le
@@ -234,7 +234,7 @@ class Series(UserList):
             other = _parse_date(other)
 
         if self.dtype == float and isinstance(other, Number) or isinstance(other, self.dtype):
-            eq = Series([i == other for i in self.data], 'bool')
+            eq = Series([i == other for i in self.data], "bool")
         else:
             raise Exception(f"Cannot compare type {self.dtype.__name__} to {type(other).__name__}")
         return eq
@@ -282,14 +282,14 @@ class TimeSeriesCore(UserDict):
         if self._dates is None or len(self._dates) != len(self.data):
             self._dates = list(self.data.keys())
 
-        return Series(self._dates, 'date')
+        return Series(self._dates, "date")
 
     @property
     def values(self):
         if self._values is None or len(self._values) != len(self.data):
             self._values = list(self.data.values())
 
-        return Series(self._values, 'number')
+        return Series(self._values, "number")
 
     @property
     def start_date(self):
