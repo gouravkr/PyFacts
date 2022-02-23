@@ -1,7 +1,9 @@
 import datetime
+from typing import Mapping
 
-from fincal.core import AllFrequencies, Frequency, Series
+from fincal.core import AllFrequencies, Frequency, Series, TimeSeriesCore
 from fincal.fincal import create_date_series
+from numpy import isin
 
 
 class TestFrequency:
@@ -47,3 +49,22 @@ class TestSeries:
         dates = create_date_series('2021-01-01', '2021-01-31', frequency='D')
         series = Series(dates, data_type='date')
         assert series.dtype == datetime.datetime
+
+
+class TestTimeSeriesCore:
+    data = [('2021-01-01', 220), ('2021-02-01', 230), ('2021-03-01', 240)]
+
+    def test_creation(self):
+        ts = TimeSeriesCore(self.data, frequency='M')
+        assert isinstance(ts, TimeSeriesCore)
+        assert isinstance(ts, Mapping)
+
+    def test_getitem(self):
+        ts = TimeSeriesCore(self.data, frequency='M')
+        assert ts.dates[0] == datetime.datetime(2021, 1, 1, 0, 0)
+        assert ts.values[0] == 220
+        assert ts['2021-01-01'][1] == 220
+        assert len(ts[ts.dates > '2021-01-01']) == 2
+        assert ts[ts.dates == '2021-02-01'].iloc[0][1] == 230
+        assert ts.iloc[2][0] == datetime.datetime(2021, 3, 1)
+        assert len(ts.iloc[:2]) == 2
