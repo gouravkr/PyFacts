@@ -114,6 +114,18 @@ def _parse_date(date: str, date_format: str = None):
     return date
 
 
+def _interval_to_years(interval_type: Literal['years', 'months', 'day'], interval_value: int) -> int:
+    """Converts any time period to years for use with compounding functions"""
+
+    day_conversion_factor = {
+        'years': 1,
+        'months': 12,
+        'days': 365
+    }
+    years = interval_value/day_conversion_factor[interval_type]
+    return years
+
+
 class _IndexSlicer:
     """Class to create a slice using iloc in TimeSeriesCore"""
 
