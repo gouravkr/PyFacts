@@ -1,5 +1,6 @@
 import datetime
-from typing import Mapping
+import random
+from typing import Literal, Mapping, Sequence
 
 from fincal.core import AllFrequencies, Frequency, Series, TimeSeriesCore
 from fincal.fincal import create_date_series
@@ -13,6 +14,48 @@ class TestFrequency:
         assert D.name == 'daily'
         assert D.value == 1
         assert D.freq_type == 'days'
+
+
+def create_test_data(
+    frequency: str,
+    eomonth: bool,
+    n: int,
+    gaps: float,
+    month_position: Literal["start", "middle", "end"],
+    date_as_str: bool,
+    as_outer_type: Literal["dict", "list"] = "list",
+    as_inner_type: Literal["dict", "list", "tuple"] = "tuple",
+) -> Sequence[tuple]:
+    start_dates = {
+        "start": datetime.datetime(2016, 1, 1),
+        "middle": datetime.datetime(2016, 1, 15),
+        "end": datetime.datetime(2016, 1, 31),
+    }
+    end_date = datetime.datetime(2021, 12, 31)
+    dates = create_date_series(start_dates[month_position], end_date, frequency=frequency, eomonth=eomonth)
+    dates = dates[:n]
+    if gaps:
+        num_gaps = int(len(dates) * gaps)
+        to_remove = random.sample(dates, num_gaps)
+        for i in to_remove:
+            dates.remove(i)
+    if date_as_str:
+        dates = [i.strftime("%Y-%m-%d") for i in dates]
+
+    values = [random.randint(8000, 90000) / 100 for _ in dates]
+
+    data = list(zip(dates, values))
+    if as_outer_type == "list":
+        if as_inner_type == "list":
+            data = [list(i) for i in data]
+        elif as_inner_type == "dict[1]":
+            data = [dict((i,)) for i in data]
+        elif as_inner_type == "dict[2]":
+            data = [dict(date=i, value=j) for i, j in data]
+    elif as_outer_type == "dict":
+        data = dict(data)
+
+    return data
 
 
 class TestAllFrequencies:
@@ -52,6 +95,15 @@ class TestSeries:
 
 class TestTimeSeriesCore:
     data = [('2021-01-01', 220), ('2021-02-01', 230), ('2021-03-01', 240)]
+
+    def test_repr_str(self):
+        ts = TimeSeriesCore(self.data, frequency='M')
+        assert str(ts) in repr(ts).replace('\t', ' ')
+
+        data = create_test_data(frequency="D", eomonth=False, n=50, gaps=0, month_position="start", date_as_str=True)
+        ts = TimeSeriesCore(data, frequency="D")
+        assert '...' in str(ts)
+        assert '...' in repr(ts)
 
     def test_creation(self):
         ts = TimeSeriesCore(self.data, frequency='M')
