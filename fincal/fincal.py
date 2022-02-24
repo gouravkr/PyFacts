@@ -1,11 +1,17 @@
 from __future__ import annotations
 
 import datetime
-from typing import List, Union
+from typing import List, Literal, Union
 
 from dateutil.relativedelta import relativedelta
 
-from .core import AllFrequencies, TimeSeriesCore, _parse_date, _preprocess_match_options
+from .core import (
+    AllFrequencies,
+    TimeSeriesCore,
+    _interval_to_years,
+    _parse_date,
+    _preprocess_match_options,
+)
 
 
 def create_date_series(
@@ -120,7 +126,8 @@ class TimeSeries(TimeSeriesCore):
         prior_match: str = "closest",
         closest: str = "previous",
         compounding: bool = True,
-        years: int = 1,
+        interval_type: Literal['years', 'months', 'days'] = 'years',
+        interval_value: int = 1,
         date_format: str = None
     ) -> float:
         """Method to calculate returns for a certain time-period as on a particular date
@@ -172,7 +179,7 @@ class TimeSeries(TimeSeriesCore):
                 raise ValueError("As on date not found")
             as_on += as_on_delta
 
-        prev_date = as_on - relativedelta(years=years)
+        prev_date = as_on - relativedelta(**{interval_type: interval_value})
         while True:
             previous = self.data.get(prev_date, None)
             if previous is not None:
@@ -183,6 +190,7 @@ class TimeSeries(TimeSeriesCore):
 
         returns = current / previous
         if compounding:
+            years = _interval_to_years(interval_type, interval_value)
             returns = returns ** (1 / years)
         return returns - 1
 
