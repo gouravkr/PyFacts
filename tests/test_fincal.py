@@ -115,7 +115,7 @@ class TestDateSeries:
         assert datetime.datetime(2020, 11, 30) in d
 
 
-class TestFincal:
+class TestFincalBasic:
     def test_creation(self):
         data = create_test_data(frequency="D", eomonth=False, n=50, gaps=0, month_position="start", date_as_str=True)
         time_series = TimeSeries(data, frequency="D")
@@ -130,7 +130,7 @@ class TestFincal:
         time_series = TimeSeries(data, frequency="D")
         assert len(time_series) == 450
 
-    def test_ffill(self):
+    def test_fill(self):
         data = create_test_data(frequency="D", eomonth=False, n=500, gaps=0.1, month_position="start", date_as_str=True)
         time_series = TimeSeries(data, frequency="D")
         ffill_data = time_series.ffill()
@@ -139,6 +139,23 @@ class TestFincal:
         ffill_data = time_series.ffill(inplace=True)
         assert ffill_data is None
         assert len(time_series) >= 498
+
+        data = create_test_data(frequency="D", eomonth=False, n=500, gaps=0.1, month_position="start", date_as_str=True)
+        time_series = TimeSeries(data, frequency="D")
+        bfill_data = time_series.bfill()
+        assert len(bfill_data) >= 498
+
+        bfill_data = time_series.bfill(inplace=True)
+        assert bfill_data is None
+        assert len(time_series) >= 498
+
+        data = [("2021-01-01", 220), ("2021-01-02", 230), ("2021-03-04", 240)]
+        ts = TimeSeries(data, frequency="D")
+        ff = ts.ffill()
+        assert ff["2021-01-03"][1] == 230
+
+        bf = ts.bfill()
+        assert bf["2021-01-03"][1] == 240
 
     def test_iloc_slicing(self):
         data = create_test_data(frequency="D", eomonth=False, n=50, gaps=0, month_position="start", date_as_str=True)
