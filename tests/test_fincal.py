@@ -204,3 +204,5 @@ class TestFincalBasic:
         assert round(returns, 4) == 0.6
         returns = ts.calculate_returns("2020-04-01", compounding=True, interval_type='days', interval_value=90)
         assert round(returns, 4) == 5.727
+        returns = ts.calculate_returns("2020-04-10", compounding=True, interval_type='days', interval_value=90)
+        assert round(returns, 4) == 5.727
