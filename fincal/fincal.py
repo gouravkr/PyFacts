@@ -203,7 +203,8 @@ class TimeSeries(TimeSeriesCore):
         prior_match: str = "closest",
         closest: str = "previous",
         compounding: bool = True,
-        years: int = 1,
+        interval_type: Literal['years', 'months', 'days'] = 'years',
+        interval_value: int = 1,
         date_format: str = None
     ) -> List[tuple]:
         """Calculates the rolling return"""
@@ -228,7 +229,8 @@ class TimeSeries(TimeSeriesCore):
             returns = self.calculate_returns(
                 as_on=i,
                 compounding=compounding,
-                years=years,
+                interval_type=interval_type,
+                interval_value=interval_value,
                 as_on_match=as_on_match,
                 prior_match=prior_match,
                 closest=closest,
