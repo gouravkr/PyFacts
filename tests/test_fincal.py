@@ -176,3 +176,31 @@ class TestFincalBasic:
         assert isinstance(time_series["values"], Series)
         assert len(time_series.dates) == 50
         assert len(time_series.values) == 50
+
+    def test_returns_calc(self):
+        data = [
+            ('2020-01-01', 10),
+            ('2020-02-01', 12),
+            ('2020-03-01', 14),
+            ('2020-04-01', 16),
+            ('2020-05-01', 18),
+            ('2020-06-01', 20),
+            ('2020-07-01', 22),
+            ('2020-08-01', 24),
+            ('2020-09-01', 26),
+            ('2020-10-01', 28),
+            ('2020-11-01', 30),
+            ('2020-12-01', 32),
+            ('2021-01-01', 34)
+        ]
+        ts = TimeSeries(data, frequency='M')
+        returns = ts.calculate_returns("2021-01-01", compounding=False, interval_type='years', interval_value=1)
+        assert returns == 2.4
+        returns = ts.calculate_returns("2020-04-01", compounding=False, interval_type='months', interval_value=3)
+        assert round(returns, 4) == 0.6
+        returns = ts.calculate_returns("2020-04-01", compounding=True, interval_type='months', interval_value=3)
+        assert round(returns, 4) == 5.5536
+        returns = ts.calculate_returns("2020-04-01", compounding=False, interval_type='days', interval_value=90)
+        assert round(returns, 4) == 0.6
+        returns = ts.calculate_returns("2020-04-01", compounding=True, interval_type='days', interval_value=90)
+        assert round(returns, 4) == 5.727
