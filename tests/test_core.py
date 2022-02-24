@@ -3,7 +3,6 @@ from typing import Mapping
 
 from fincal.core import AllFrequencies, Frequency, Series, TimeSeriesCore
 from fincal.fincal import create_date_series
-from numpy import isin
 
 
 class TestFrequency:
@@ -68,3 +67,15 @@ class TestTimeSeriesCore:
         assert ts[ts.dates == '2021-02-01'].iloc[0][1] == 230
         assert ts.iloc[2][0] == datetime.datetime(2021, 3, 1)
         assert len(ts.iloc[:2]) == 2
+
+    def test_contains(self):
+        ts = TimeSeriesCore(self.data, frequency='M')
+        assert datetime.datetime(2021, 1, 1) in ts
+        assert '2021-01-01' in ts
+        assert '2021-01-14' not in ts
+
+    def test_items(self):
+        ts = TimeSeriesCore(self.data, frequency='M')
+        for i, j in ts.items():
+            assert j == self.data[0][1]
+            break

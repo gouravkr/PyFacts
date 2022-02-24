@@ -387,6 +387,10 @@ class TimeSeriesCore(UserDict):
             self.n += 1
             return key, self.data[key]
 
+    def __contains__(self, key: object) -> bool:
+        key = _parse_date(key)
+        return super().__contains__(key)
+
     def head(self, n: int = 6):
         """Returns the first n items of the TimeSeries object"""
 
