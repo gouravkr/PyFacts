@@ -4,7 +4,7 @@ import random
 from typing import Literal, Sequence
 
 import pytest
-from fincal.core import FincalOptions, Frequency, Series
+from fincal.core import DateNotFoundError, FincalOptions, Frequency, Series
 from fincal.fincal import TimeSeries, create_date_series
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -209,8 +209,10 @@ class TestReturns:
         assert round(returns[1], 4) == 5.727
         returns = ts.calculate_returns("2020-04-10", compounding=True, interval_type='days', interval_value=90)
         assert round(returns[1], 4) == 5.727
-        with pytest.raises(ValueError):
+        with pytest.raises(DateNotFoundError):
             ts.calculate_returns("2020-04-10", interval_type='days', interval_value=90, as_on_match='exact')
+        with pytest.raises(DateNotFoundError):
+            ts.calculate_returns("2020-04-10", interval_type='days', interval_value=90, prior_match='exact')
 
     def test_date_formats(self):
         ts = TimeSeries(self.data, frequency='M')
