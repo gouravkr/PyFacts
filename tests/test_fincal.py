@@ -4,7 +4,7 @@ import random
 from typing import Literal, Sequence
 
 import pytest
-from fincal.core import Frequency, Series
+from fincal.core import FincalOptions, Frequency, Series
 from fincal.fincal import TimeSeries, create_date_series
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -177,8 +177,9 @@ class TestFincalBasic:
         assert len(time_series.dates) == 50
         assert len(time_series.values) == 50
 
-    def test_returns_calc(self):
-        data = [
+
+class TestReturns:
+    data = [
             ('2020-01-01', 10),
             ('2020-02-01', 12),
             ('2020-03-01', 14),
@@ -193,7 +194,9 @@ class TestFincalBasic:
             ('2020-12-01', 32),
             ('2021-01-01', 34)
         ]
-        ts = TimeSeries(data, frequency='M')
+
+    def test_returns_calc(self):
+        ts = TimeSeries(self.data, frequency='M')
         returns = ts.calculate_returns("2021-01-01", compounding=False, interval_type='years', interval_value=1)
         assert returns == 2.4
         returns = ts.calculate_returns("2020-04-01", compounding=False, interval_type='months', interval_value=3)
@@ -206,3 +209,15 @@ class TestFincalBasic:
         assert round(returns, 4) == 5.727
         returns = ts.calculate_returns("2020-04-10", compounding=True, interval_type='days', interval_value=90)
         assert round(returns, 4) == 5.727
+        with pytest.raises(ValueError):
+            ts.calculate_returns("2020-04-10", interval_type='days', interval_value=90, as_on_match='exact')
+
+    def test_date_formats(self):
+        ts = TimeSeries(self.data, frequency='M')
+        FincalOptions.date_format = '%d-%m-%Y'
+        with pytest.raises(ValueError):
+            ts.calculate_returns("2020-04-10", compounding=True, interval_type='days', interval_value=90)
+
+        returns1 = ts.calculate_returns("2020-04-10", interval_type='days', interval_value=90, date_format='%Y-%m-%d')
+        returns2 = ts.calculate_returns("10-04-2020", interval_type='days', interval_value=90)
+        assert round(returns1, 4) == round(returns2, 4) == 5.727
