@@ -122,9 +122,11 @@ class TimeSeries(TimeSeriesCore):
     def calculate_returns(
         self,
         as_on: Union[str, datetime.datetime],
+        return_actual_date: bool = True,
         as_on_match: str = "closest",
         prior_match: str = "closest",
         closest: str = "previous",
+        if_not_found: Literal['fail', 'nan'] = 'fail',
         compounding: bool = True,
         interval_type: Literal['years', 'months', 'days'] = 'years',
         interval_value: int = 1,
@@ -137,6 +139,10 @@ class TimeSeries(TimeSeriesCore):
         as_on : datetime.datetime
             The date as on which the return is to be calculated.
 
+        return_actual_date : bool, default True
+            If true, the output will contain the actual date based on which the return was calculated.
+            Set to False to return the date passed in the as_on argument.
+
         as_on_match : str, optional
             The mode of matching the as_on_date. Refer closest.
 
@@ -147,15 +153,28 @@ class TimeSeries(TimeSeriesCore):
             The mode of matching the closest date.
             Valid values are 'exact', 'previous', 'next' and next.
 
+        if_not_found : 'fail' | 'nan'
+            What to do when required date is not found:
+            * fail: Raise a ValueError
+            * nan: Return nan as the value
+
         compounding : bool, optional
             Whether the return should be compounded annually.
 
-        years : int, optional
-            number of years for which the returns should be calculated
+        interval_type : 'years', 'months', 'days'
+            The type of time period to use for return calculation.
+
+        interval_value : int
+            The value of the specified interval type over which returns needs to be calculated.
+
+        date_format: str
+            The date format to use for this operation.
+            Should be passed as a datetime library compatible string.
+            Sets the date format only for this operation. To set it globally, use FincalOptions.date_format
 
         Returns
         -------
-        The float value of the returns.
+        A tuple containing the date and float value of the returns.
 
         Raises
         ------
@@ -170,13 +189,19 @@ class TimeSeries(TimeSeriesCore):
 
         as_on = _parse_date(as_on, date_format)
         as_on_delta, prior_delta = _preprocess_match_options(as_on_match, prior_match, closest)
+        original_as_on = as_on
 
         while True:
             current = self.data.get(as_on, None)
             if current is not None:
                 break
             elif not as_on_delta:
-                raise ValueError("As on date not found")
+                if if_not_found == 'fail':
+                    raise ValueError(f"As on date {original_as_on} not found")
+                elif if_not_found == 'nan':
+                    return as_on, float("NaN")
+                else:
+                    raise ValueError(f"Invalid argument for if_not_found: {if_not_found}")
             as_on += as_on_delta
 
         prev_date = as_on - relativedelta(**{interval_type: interval_value})
@@ -185,14 +210,19 @@ class TimeSeries(TimeSeriesCore):
             if previous is not None:
                 break
             elif not prior_delta:
-                raise ValueError("Previous date not found")
+                if if_not_found == 'fail':
+                    raise ValueError(f"Previous date {previous} not found")
+                elif if_not_found == 'nan':
+                    return (as_on if return_actual_date else original_as_on), float("NaN")
+                else:
+                    raise ValueError(f"Invalid argument for if_not_found: {if_not_found}")
             prev_date += prior_delta
 
         returns = current / previous
         if compounding:
             years = _interval_to_years(interval_type, interval_value)
             returns = returns ** (1 / years)
-        return returns - 1
+        return (as_on if return_actual_date else original_as_on), returns - 1
 
     def calculate_rolling_returns(
         self,
@@ -202,6 +232,7 @@ class TimeSeries(TimeSeriesCore):
         as_on_match: str = "closest",
         prior_match: str = "closest",
         closest: str = "previous",
+        if_not_found: Literal['fail', 'nan'] = 'fail',
         compounding: bool = True,
         interval_type: Literal['years', 'months', 'days'] = 'years',
         interval_value: int = 1,
@@ -234,8 +265,9 @@ class TimeSeries(TimeSeriesCore):
                 as_on_match=as_on_match,
                 prior_match=prior_match,
                 closest=closest,
+                if_not_found=if_not_found
             )
-            rolling_returns.append((i, returns))
+            rolling_returns.append(returns)
         rolling_returns.sort()
         return self.__class__(rolling_returns, self.frequency.symbol)
 
