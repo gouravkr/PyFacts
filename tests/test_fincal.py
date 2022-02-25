@@ -198,17 +198,17 @@ class TestReturns:
     def test_returns_calc(self):
         ts = TimeSeries(self.data, frequency='M')
         returns = ts.calculate_returns("2021-01-01", compounding=False, interval_type='years', interval_value=1)
-        assert returns == 2.4
+        assert returns[1] == 2.4
         returns = ts.calculate_returns("2020-04-01", compounding=False, interval_type='months', interval_value=3)
-        assert round(returns, 4) == 0.6
+        assert round(returns[1], 4) == 0.6
         returns = ts.calculate_returns("2020-04-01", compounding=True, interval_type='months', interval_value=3)
-        assert round(returns, 4) == 5.5536
+        assert round(returns[1], 4) == 5.5536
         returns = ts.calculate_returns("2020-04-01", compounding=False, interval_type='days', interval_value=90)
-        assert round(returns, 4) == 0.6
+        assert round(returns[1], 4) == 0.6
         returns = ts.calculate_returns("2020-04-01", compounding=True, interval_type='days', interval_value=90)
-        assert round(returns, 4) == 5.727
+        assert round(returns[1], 4) == 5.727
         returns = ts.calculate_returns("2020-04-10", compounding=True, interval_type='days', interval_value=90)
-        assert round(returns, 4) == 5.727
+        assert round(returns[1], 4) == 5.727
         with pytest.raises(ValueError):
             ts.calculate_returns("2020-04-10", interval_type='days', interval_value=90, as_on_match='exact')
 
@@ -220,7 +220,7 @@ class TestReturns:
 
         returns1 = ts.calculate_returns("2020-04-10", interval_type='days', interval_value=90, date_format='%Y-%m-%d')
         returns2 = ts.calculate_returns("10-04-2020", interval_type='days', interval_value=90)
-        assert round(returns1, 4) == round(returns2, 4) == 5.727
+        assert round(returns1[1], 4) == round(returns2[1], 4) == 5.727
 
         FincalOptions.date_format = '%m-%d-%Y'
         with pytest.raises(ValueError):
@@ -228,4 +228,4 @@ class TestReturns:
 
         returns1 = ts.calculate_returns("2020-04-10", interval_type='days', interval_value=90, date_format='%Y-%m-%d')
         returns2 = ts.calculate_returns("04-10-2020", interval_type='days', interval_value=90)
-        assert round(returns1, 4) == round(returns2, 4) == 5.727
+        assert round(returns1[1], 4) == round(returns2[1], 4) == 5.727
