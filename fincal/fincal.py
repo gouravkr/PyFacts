@@ -8,6 +8,7 @@ from dateutil.relativedelta import relativedelta
 from .core import (
     AllFrequencies,
     TimeSeriesCore,
+    _find_closest_date,
     _interval_to_years,
     _parse_date,
     _preprocess_match_options,
@@ -189,40 +190,19 @@ class TimeSeries(TimeSeriesCore):
 
         as_on = _parse_date(as_on, date_format)
         as_on_delta, prior_delta = _preprocess_match_options(as_on_match, prior_match, closest)
-        original_as_on = as_on
-
-        while True:
-            current = self.data.get(as_on, None)
-            if current is not None:
-                break
-            elif not as_on_delta:
-                if if_not_found == 'fail':
-                    raise ValueError(f"As on date {original_as_on} not found")
-                elif if_not_found == 'nan':
-                    return as_on, float("NaN")
-                else:
-                    raise ValueError(f"Invalid argument for if_not_found: {if_not_found}")
-            as_on += as_on_delta
 
         prev_date = as_on - relativedelta(**{interval_type: interval_value})
-        while True:
-            previous = self.data.get(prev_date, None)
-            if previous is not None:
-                break
-            elif not prior_delta:
-                if if_not_found == 'fail':
-                    raise ValueError(f"Previous date {previous} not found")
-                elif if_not_found == 'nan':
-                    return (as_on if return_actual_date else original_as_on), float("NaN")
-                else:
-                    raise ValueError(f"Invalid argument for if_not_found: {if_not_found}")
-            prev_date += prior_delta
+        current = _find_closest_date(self.data, as_on, as_on_delta, if_not_found)
+        previous = _find_closest_date(self.data, prev_date, prior_delta, if_not_found)
 
-        returns = current / previous
+        if current[1] == str('nan') or previous[1] == str('nan'):
+            return as_on, float('NaN')
+
+        returns = current[1] / previous[1]
         if compounding:
             years = _interval_to_years(interval_type, interval_value)
             returns = returns ** (1 / years)
-        return (as_on if return_actual_date else original_as_on), returns - 1
+        return (current[0] if return_actual_date else as_on), returns - 1
 
     def calculate_rolling_returns(
         self,
@@ -274,13 +254,13 @@ class TimeSeries(TimeSeriesCore):
 
 if __name__ == "__main__":
     date_series = [
-        datetime.datetime(2020, 1, 1),
-        datetime.datetime(2020, 1, 2),
-        datetime.datetime(2020, 1, 3),
-        datetime.datetime(2020, 1, 4),
-        datetime.datetime(2020, 1, 7),
-        datetime.datetime(2020, 1, 8),
-        datetime.datetime(2020, 1, 9),
-        datetime.datetime(2020, 1, 10),
+        datetime.datetime(2020, 1, 11),
         datetime.datetime(2020, 1, 12),
+        datetime.datetime(2020, 1, 13),
+        datetime.datetime(2020, 1, 14),
+        datetime.datetime(2020, 1, 17),
+        datetime.datetime(2020, 1, 18),
+        datetime.datetime(2020, 1, 19),
+        datetime.datetime(2020, 1, 20),
+        datetime.datetime(2020, 1, 22),
     ]
