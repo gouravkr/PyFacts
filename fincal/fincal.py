@@ -31,11 +31,11 @@ def create_date_series(
     for i in range(0, int(datediff)):
         diff = {frequency.freq_type: frequency.value * i}
         date = start_date + relativedelta(**diff)
+
         if eomonth:
-            if date.month == 12:
-                date = date.replace(day=31)
-            else:
-                date = date.replace(day=1).replace(month=date.month+1) - relativedelta(days=1)
+            next_month = 1 if date.month == 12 else date.month + 1
+            date = date.replace(day=1).replace(month=next_month) - relativedelta(days=1)
+
         if date <= end_date:
             dates.append(date)
 
@@ -125,11 +125,11 @@ class TimeSeries(TimeSeriesCore):
         return_actual_date: bool = True,
         as_on_match: str = "closest",
         prior_match: str = "closest",
-        closest: Literal["previous", "next", "exact"] = 'previous',
+        closest: Literal["previous", "next", "exact"] = "previous",
         closest_max_days: int = -1,
-        if_not_found: Literal['fail', 'nan'] = 'fail',
+        if_not_found: Literal["fail", "nan"] = "fail",
         compounding: bool = True,
-        interval_type: Literal['years', 'months', 'days'] = 'years',
+        interval_type: Literal["years", "months", "days"] = "years",
         interval_value: int = 1,
         date_format: str = None,
     ) -> float:
@@ -201,8 +201,8 @@ class TimeSeries(TimeSeriesCore):
         current = _find_closest_date(self.data, as_on, closest_max_days, as_on_delta, if_not_found)
         previous = _find_closest_date(self.data, prev_date, closest_max_days, prior_delta, if_not_found)
 
-        if current[1] == str('nan') or previous[1] == str('nan'):
-            return as_on, float('NaN')
+        if current[1] == str("nan") or previous[1] == str("nan"):
+            return as_on, float("NaN")
 
         returns = current[1] / previous[1]
         if compounding:
@@ -218,11 +218,11 @@ class TimeSeries(TimeSeriesCore):
         as_on_match: str = "closest",
         prior_match: str = "closest",
         closest: str = "previous",
-        if_not_found: Literal['fail', 'nan'] = 'fail',
+        if_not_found: Literal["fail", "nan"] = "fail",
         compounding: bool = True,
-        interval_type: Literal['years', 'months', 'days'] = 'years',
+        interval_type: Literal["years", "months", "days"] = "years",
         interval_value: int = 1,
-        date_format: str = None
+        date_format: str = None,
     ) -> List[tuple]:
         """Calculates the rolling return"""
 
@@ -251,7 +251,7 @@ class TimeSeries(TimeSeriesCore):
                 as_on_match=as_on_match,
                 prior_match=prior_match,
                 closest=closest,
-                if_not_found=if_not_found
+                if_not_found=if_not_found,
             )
             rolling_returns.append(returns)
         rolling_returns.sort()
