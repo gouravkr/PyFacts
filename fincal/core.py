@@ -2,7 +2,7 @@ import datetime
 from collections import UserDict, UserList
 from dataclasses import dataclass
 from numbers import Number
-from typing import Iterable, List, Literal, Sequence
+from typing import Iterable, List, Literal, Sequence, Tuple
 
 from .utils import _parse_date, _preprocess_timeseries
 
@@ -189,29 +189,40 @@ class TimeSeriesCore(UserDict):
         self._end_date = None
 
     @property
-    def dates(self):
+    def dates(self) -> Series:
+        """Get a list of all the dates in the TimeSeries object"""
+
         if self._dates is None or len(self._dates) != len(self.data):
             self._dates = list(self.data.keys())
 
         return Series(self._dates, "date")
 
     @property
-    def values(self):
+    def values(self) -> Series:
+        """Get a list of all the Values in the TimeSeries object"""
+
         if self._values is None or len(self._values) != len(self.data):
             self._values = list(self.data.values())
 
         return Series(self._values, "number")
 
     @property
-    def start_date(self):
+    def start_date(self) -> datetime.datetime:
+        """The first date in the TimeSeries object"""
+
         return self.dates[0]
 
     @property
-    def end_date(self):
+    def end_date(self) -> datetime.datetime:
+        """The last date in the TimeSeries object"""
+
         return self.dates[-1]
 
     def _get_printable_slice(self, n: int):
-        """Returns a slice of the dataframe from beginning and end"""
+        """Helper function for __repr__ and __str__
+
+            Returns a slice of the dataframe from beginning and end.
+        """
 
         printable = {}
         iter_f = iter(self.data)
@@ -322,7 +333,21 @@ class TimeSeriesCore(UserDict):
         return self.data.items()
 
     @property
-    def iloc(self):
-        """Returns an item or a set of items based on index"""
+    def iloc(self) -> List[Tuple[datetime.datetime, float]]:
+        """Returns an item or a set of items based on index
+
+            supports slicing using numerical index.
+            Accepts integers or Python slice objects
+
+        Usage
+        -----
+        >>> ts = TimeSeries(data, frequency='D')
+        >>> ts.iloc[0]  # get the first value
+        >>> ts.iloc[-1]  # get the last value
+        >>> ts.iloc[:3]  # get the first 3 values
+        >>> ts.illoc[-3:]  # get the last 3 values
+        >>> ts.iloc[5:10]  # get five values starting from the fifth value
+        >>> ts.iloc[::2]  # get every alternate date
+        """
 
         return _IndexSlicer(self)

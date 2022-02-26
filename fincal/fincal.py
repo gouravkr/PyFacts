@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime
-from typing import List, Literal, Union
+from typing import Iterable, List, Literal, Mapping, Union
 
 from dateutil.relativedelta import relativedelta
 
@@ -15,9 +15,41 @@ from .utils import (
 
 
 def create_date_series(
-    start_date: datetime.datetime, end_date: datetime.datetime, frequency: str, eomonth: bool = False
+    start_date: Union[str, datetime.datetime],
+    end_date: Union[str, datetime.datetime],
+    frequency: Literal["D", "W", "M", "Q", "H", "Y"],
+    eomonth: bool = False,
 ) -> List[datetime.datetime]:
-    """Creates a date series using a frequency"""
+    """Create a date series with a specified frequency
+
+    Parameters
+    ----------
+    start_date : str | datetime.datetime
+        Date series will always start at this date
+
+    end_date : str | datetime.datetime
+        The date till which the series should extend
+        Depending on the other parameters, this date may or may not be present
+        in the final date series
+
+    frequency : D | W | M | Q | H | Y
+        Frequency of the date series.
+        The gap between each successive date will be equivalent to this frequency
+
+    eomonth : bool, optional
+        Speacifies if the dates in the series should be end of month dates.
+        Can only be used if the frequency is Monthly or lower.
+
+    Returns
+    -------
+    List[datetime.datetime]
+        Returns the series as a list of datetime objects
+
+    Raises
+    ------
+    ValueError
+        If eomonth is True and frequency is higher than monthly
+    """
 
     frequency = getattr(AllFrequencies, frequency)
     if eomonth and frequency.days < AllFrequencies.M.days:
@@ -43,7 +75,40 @@ def create_date_series(
 
 
 class TimeSeries(TimeSeriesCore):
-    """Container for TimeSeries objects"""
+    """1-Dimensional Time Series object
+
+    Parameters
+    ----------
+    data : List[Iterable] | Mapping
+        Time Series data in the form of list of tuples.
+        The first element of each tuple should be a date and second element should be a value.
+        The following types of objects can be passed to create a TimeSeries object:
+        * List of tuples containing date & value
+        * List of lists containing date & value
+        * List of dictionaries containing key: value pair of date and value
+        * List of dictionaries with 2 keys, first representing date & second representing value
+        * Dictionary of key: value pairs
+
+    date_format : str, optional, default "%Y-%m-%d"
+        Specify the format of the date
+        Required only if the first argument of tuples is a string. Otherwise ignored.
+
+    frequency : str, optional, default "infer"
+        The frequency of the time series. Default is infer.
+        The class will try to infer the frequency automatically and adjust to the closest member.
+        Note that inferring frequencies can fail if the data is too irregular.
+        Valid values are {D, W, M, Q, H, Y}
+    """
+
+    def __init__(
+        self,
+        data: Union[List[Iterable], Mapping],
+        frequency: Literal["D", "W", "M", "Q", "H", "Y"],
+        date_format: str = "%Y-%m-%d",
+    ):
+        """Instantiate a TimeSeriesCore object"""
+
+        super().__init__(data, frequency, date_format)
 
     def info(self):
         """Summary info about the TimeSeries object"""
@@ -154,6 +219,12 @@ class TimeSeries(TimeSeriesCore):
             The mode of matching the closest date.
             Valid values are 'exact', 'previous', 'next' and next.
 
+        closest_max_days: int, default -1
+            The maximum acceptable gap between the provided date arguments and actual date.
+            Pass -1 for no limit.
+            Note: There's a hard max limit of 1000 days due to Python's limits on recursion.
+                  This can be overridden by importing the sys module.
+
         if_not_found : 'fail' | 'nan'
             What to do when required date is not found:
             * fail: Raise a ValueError
@@ -173,12 +244,6 @@ class TimeSeries(TimeSeriesCore):
             Should be passed as a datetime library compatible string.
             Sets the date format only for this operation. To set it globally, use FincalOptions.date_format
 
-        closest_max_days: int, default -1
-            The maximum acceptable gap between the provided date arguments and actual date.
-            Pass -1 for no limit.
-            Note: There's a hard max limit of 1000 days due to Python's limits on recursion.
-                  This can be overridden by importing the sys module.
-
         Returns
         -------
         A tuple containing the date and float value of the returns.
@@ -192,6 +257,7 @@ class TimeSeries(TimeSeriesCore):
         Example
         --------
         >>> calculate_returns(datetime.date(2020, 1, 1), years=1)
+        (datetime.datetime(2020, 1, 1, 0, 0), .0567)
         """
 
         as_on = _parse_date(as_on, date_format)
@@ -214,17 +280,81 @@ class TimeSeries(TimeSeriesCore):
         self,
         from_date: Union[datetime.date, str],
         to_date: Union[datetime.date, str],
-        frequency: str = None,
+        frequency: Literal["D", "W", "M", "Q", "H", "Y"] = None,
         as_on_match: str = "closest",
         prior_match: str = "closest",
-        closest: str = "previous",
+        closest: Literal["previous", "next", "exact"] = "previous",
         if_not_found: Literal["fail", "nan"] = "fail",
         compounding: bool = True,
         interval_type: Literal["years", "months", "days"] = "years",
         interval_value: int = 1,
         date_format: str = None,
-    ) -> List[tuple]:
-        """Calculates the rolling return"""
+    ) -> TimeSeries:
+        """Calculate the returns on a rolling basis.
+            This is a wrapper function around the calculate_returns function.
+
+        Parameters
+        ----------
+        from_date : datetime.date | str
+            Start date for the return calculation.
+
+        to_date : datetime.date | str
+            End date for the returns calculation.
+
+        frequency : str, optional
+            Frequency at which the returns should be calcualated.
+            Valid values are {D, W, M, Q, H, Y}
+
+        as_on_match : str, optional
+            The match mode to be used for the as on date.
+            If not specified, the value for the closes parameter will be used.
+
+        prior_match : str, optional
+            The match mode to be used for the prior date, i.e., the date against which the return will be calculated.
+            If not specified, the value for the closes parameter will be used.
+
+        closest : previous | next | exact
+            The default match mode for dates.
+            * Previous: look for the immediate previous available date
+            * Next: look for the immediate next available date
+            * Exact: Only look for the exact date passed in the input
+
+        if_not_found : fail | nan
+            Specifies what should be done if the date is not found.
+            * fail: raise a DateNotFoundError.
+            * nan: return nan as the value.
+                Note, this will return float('NaN') and not 'nan' as string.
+
+            Note, this function will always raise an error if it is not possible to find a matching date.`
+            For instance, if the input date is before the starting of the first date of the time series,
+            but match mode is set to previous. A DateOutOfRangeError will be raised in such cases.
+
+        compounding : bool, optional
+            Should the returns be compounded annually.
+
+        interval_type : years | month | days
+            The interval for the return calculation.
+
+        interval_value : int, optional
+            The value of the interval for return calculation.
+
+        date_format : str, optional
+            A datetime library compatible format string.
+            If not specified, will use the setting in FincalOptions.date_format.
+
+        Returns
+        -------
+            Returs the rolling returns as a TimeSeries object.
+
+        Raises
+        ------
+            ValueError
+            - If an invalid argument is passed for frequency parameter.
+
+        See also
+        --------
+            TimeSeries.calculate_returns
+        """
 
         from_date = _parse_date(from_date, date_format)
         to_date = _parse_date(to_date, date_format)
