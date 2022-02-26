@@ -125,7 +125,7 @@ class TimeSeries(TimeSeriesCore):
         return_actual_date: bool = True,
         as_on_match: str = "closest",
         prior_match: str = "closest",
-        closest: str = "previous",
+        closest: Literal["previous", "next", "exact"] = 'previous',
         if_not_found: Literal['fail', 'nan'] = 'fail',
         compounding: bool = True,
         interval_type: Literal['years', 'months', 'days'] = 'years',

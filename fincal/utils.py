@@ -2,7 +2,7 @@ import datetime
 from dataclasses import dataclass
 from typing import Iterable, List, Literal, Mapping, Sequence, Tuple, Union
 
-from .exceptions import DateNotFoundError
+from .exceptions import DateNotFoundError, DateOutOfRangeError
 
 
 @dataclass
@@ -87,6 +87,11 @@ def _preprocess_match_options(as_on_match: str, prior_match: str, closest: str) 
 
 def _find_closest_date(data, date, delta, if_not_found):
     """Helper function to find data for the closest available date"""
+
+    if delta.days < 0 and date < min(data):
+        raise DateOutOfRangeError(date, 'min')
+    if delta.days > 0 and date > max(data):
+        raise DateOutOfRangeError(date, 'max')
 
     row = data.get(date, None)
     if row is not None:
