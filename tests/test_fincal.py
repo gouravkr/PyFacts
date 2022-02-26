@@ -4,8 +4,10 @@ import random
 from typing import Literal, Sequence
 
 import pytest
-from fincal.core import DateNotFoundError, FincalOptions, Frequency, Series
+from fincal.core import Frequency, Series
+from fincal.exceptions import DateNotFoundError
 from fincal.fincal import TimeSeries, create_date_series
+from fincal.utils import FincalOptions
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 sample_data_path = os.path.join(THIS_DIR, "data")

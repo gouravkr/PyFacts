@@ -5,9 +5,8 @@ from typing import List, Literal, Union
 
 from dateutil.relativedelta import relativedelta
 
-from .core import (
-    AllFrequencies,
-    TimeSeriesCore,
+from .core import AllFrequencies, TimeSeriesCore
+from .utils import (
     _find_closest_date,
     _interval_to_years,
     _parse_date,
