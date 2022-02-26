@@ -126,11 +126,12 @@ class TimeSeries(TimeSeriesCore):
         as_on_match: str = "closest",
         prior_match: str = "closest",
         closest: Literal["previous", "next", "exact"] = 'previous',
+        closest_max_days: int = -1,
         if_not_found: Literal['fail', 'nan'] = 'fail',
         compounding: bool = True,
         interval_type: Literal['years', 'months', 'days'] = 'years',
         interval_value: int = 1,
-        date_format: str = None
+        date_format: str = None,
     ) -> float:
         """Method to calculate returns for a certain time-period as on a particular date
 
@@ -172,6 +173,12 @@ class TimeSeries(TimeSeriesCore):
             Should be passed as a datetime library compatible string.
             Sets the date format only for this operation. To set it globally, use FincalOptions.date_format
 
+        closest_max_days: int, default -1
+            The maximum acceptable gap between the provided date arguments and actual date.
+            Pass -1 for no limit.
+            Note: There's a hard max limit of 1000 days due to Python's limits on recursion.
+                  This can be overridden by importing the sys module.
+
         Returns
         -------
         A tuple containing the date and float value of the returns.
@@ -191,8 +198,8 @@ class TimeSeries(TimeSeriesCore):
         as_on_delta, prior_delta = _preprocess_match_options(as_on_match, prior_match, closest)
 
         prev_date = as_on - relativedelta(**{interval_type: interval_value})
-        current = _find_closest_date(self.data, as_on, as_on_delta, if_not_found)
-        previous = _find_closest_date(self.data, prev_date, prior_delta, if_not_found)
+        current = _find_closest_date(self.data, as_on, closest_max_days, as_on_delta, if_not_found)
+        previous = _find_closest_date(self.data, prev_date, closest_max_days, prior_delta, if_not_found)
 
         if current[1] == str('nan') or previous[1] == str('nan'):
             return as_on, float('NaN')

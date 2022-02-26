@@ -85,7 +85,7 @@ def _preprocess_match_options(as_on_match: str, prior_match: str, closest: str) 
     return as_on_delta, prior_delta
 
 
-def _find_closest_date(data, date, delta, if_not_found):
+def _find_closest_date(data, date, limit_days, delta, if_not_found):
     """Helper function to find data for the closest available date"""
 
     if delta.days < 0 and date < min(data):
@@ -97,8 +97,8 @@ def _find_closest_date(data, date, delta, if_not_found):
     if row is not None:
         return date, row
 
-    if delta:
-        return _find_closest_date(data, date + delta, delta, if_not_found)
+    if delta and limit_days != 0:
+        return _find_closest_date(data, date + delta, limit_days-1, delta, if_not_found)
 
     if if_not_found == "fail":
         raise DateNotFoundError("Data not found for date", date)
