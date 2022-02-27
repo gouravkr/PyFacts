@@ -43,6 +43,23 @@ class _IndexSlicer:
         return item
 
 
+def date_parser(*params):
+    def parse_dates(func):
+        def wrapper_func(*args, **kwargs):
+            date_format = kwargs.get('date_format', None)
+
+            for i, j in enumerate(params):
+                date = kwargs.get(j, None)
+                if date is None:
+                    date = args[i+1]
+
+                parsed_date = _parse_date(date, date_format)
+                kwargs[j] = parsed_date
+            return func(**kwargs)
+        return wrapper_func
+    return parse_dates
+
+
 class Series(UserList):
     """Container for a series of objects, all objects must be of the same type"""
 
@@ -157,7 +174,7 @@ class TimeSeriesCore(UserDict):
     def __init__(
         self, data: List[Iterable], frequency: Literal["D", "W", "M", "Q", "H", "Y"], date_format: str = "%Y-%m-%d"
     ):
-        """Instantiate a TimeSeries object
+        """Instantiate a TimeSeriesCore object
 
         Parameters
         ----------

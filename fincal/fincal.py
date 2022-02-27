@@ -5,7 +5,7 @@ from typing import Iterable, List, Literal, Mapping, Union
 
 from dateutil.relativedelta import relativedelta
 
-from .core import AllFrequencies, TimeSeriesCore
+from .core import AllFrequencies, TimeSeriesCore, date_parser
 from .utils import (
     _find_closest_date,
     _interval_to_years,
@@ -184,6 +184,7 @@ class TimeSeries(TimeSeriesCore):
 
         return self.__class__(new_ts, frequency=self.frequency.symbol)
 
+    # @date_parser('as_on')
     def calculate_returns(
         self,
         as_on: Union[str, datetime.datetime],
@@ -276,6 +277,7 @@ class TimeSeries(TimeSeriesCore):
             returns = returns ** (1 / years)
         return (current[0] if return_actual_date else as_on), returns - 1
 
+    # @date_parser('from_date', 'to_date')
     def calculate_rolling_returns(
         self,
         from_date: Union[datetime.date, str],
