@@ -1,4 +1,5 @@
 import datetime
+import inspect
 from collections import UserDict, UserList
 from dataclasses import dataclass
 from numbers import Number
@@ -16,23 +17,27 @@ class Frequency:
     symbol: str
 
 
-def date_parser(pos, params):
+def date_parser(pos):
     def parse_dates(func):
         def wrapper_func(*args, **kwargs):
             date_format = kwargs.get("date_format", None)
             args = list(args)
-            for i, j in enumerate(params):
-                date = kwargs.get(j, None)
+            sig = inspect.signature(func)
+            params = [i[0] for i in sig.parameters.items()]
+            # print(params)
+            for j in pos:
+                kwarg = params[j]
+                date = kwargs.get(kwarg, None)
                 in_args = False
                 if date is None:
-                    date = args[pos[i]]
+                    date = args[j]
                     in_args = True
 
                 parsed_date = _parse_date(date, date_format)
                 if not in_args:
-                    kwargs[j] = parsed_date
+                    kwargs[kwarg] = parsed_date
                 else:
-                    args[pos[i]] = parsed_date
+                    args[j] = parsed_date
             return func(*args, **kwargs)
 
         return wrapper_func
