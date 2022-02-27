@@ -13,7 +13,7 @@ class FincalOptions:
 
 def _parse_date(date: str, date_format: str = None):
     """Parses date and handles errors"""
-
+    # print(date, date_format)
     if isinstance(date, (datetime.datetime, datetime.date)):
         return datetime.datetime.fromordinal(date.toordinal())
 

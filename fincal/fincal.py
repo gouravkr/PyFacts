@@ -184,7 +184,7 @@ class TimeSeries(TimeSeriesCore):
 
         return self.__class__(new_ts, frequency=self.frequency.symbol)
 
-    # @date_parser('as_on')
+    @date_parser(pos=[1], params=['as_on'])
     def calculate_returns(
         self,
         as_on: Union[str, datetime.datetime],
@@ -261,7 +261,7 @@ class TimeSeries(TimeSeriesCore):
         (datetime.datetime(2020, 1, 1, 0, 0), .0567)
         """
 
-        as_on = _parse_date(as_on, date_format)
+        # as_on = _parse_date(as_on, date_format)
         as_on_delta, prior_delta = _preprocess_match_options(as_on_match, prior_match, closest)
 
         prev_date = as_on - relativedelta(**{interval_type: interval_value})
@@ -277,7 +277,7 @@ class TimeSeries(TimeSeriesCore):
             returns = returns ** (1 / years)
         return (current[0] if return_actual_date else as_on), returns - 1
 
-    # @date_parser('from_date', 'to_date')
+    @date_parser(pos=[1, 2], params=['from_date', 'to_date'])
     def calculate_rolling_returns(
         self,
         from_date: Union[datetime.date, str],
@@ -358,8 +358,8 @@ class TimeSeries(TimeSeriesCore):
             TimeSeries.calculate_returns
         """
 
-        from_date = _parse_date(from_date, date_format)
-        to_date = _parse_date(to_date, date_format)
+        # from_date = _parse_date(from_date, date_format)
+        # to_date = _parse_date(to_date, date_format)
 
         if frequency is None:
             frequency = self.frequency

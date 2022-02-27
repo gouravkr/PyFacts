@@ -16,6 +16,30 @@ class Frequency:
     symbol: str
 
 
+def date_parser(pos, params):
+    def parse_dates(func):
+        def wrapper_func(*args, **kwargs):
+            date_format = kwargs.get("date_format", None)
+            args = list(args)
+            for i, j in enumerate(params):
+                date = kwargs.get(j, None)
+                in_args = False
+                if date is None:
+                    date = args[pos[i]]
+                    in_args = True
+
+                parsed_date = _parse_date(date, date_format)
+                if not in_args:
+                    kwargs[j] = parsed_date
+                else:
+                    args[pos[i]] = parsed_date
+            return func(*args, **kwargs)
+
+        return wrapper_func
+
+    return parse_dates
+
+
 class AllFrequencies:
     D = Frequency("daily", "days", 1, 1, "D")
     W = Frequency("weekly", "days", 7, 7, "W")
@@ -41,23 +65,6 @@ class _IndexSlicer:
             return item[0]
 
         return item
-
-
-def date_parser(*params):
-    def parse_dates(func):
-        def wrapper_func(*args, **kwargs):
-            date_format = kwargs.get('date_format', None)
-
-            for i, j in enumerate(params):
-                date = kwargs.get(j, None)
-                if date is None:
-                    date = args[i+1]
-
-                parsed_date = _parse_date(date, date_format)
-                kwargs[j] = parsed_date
-            return func(**kwargs)
-        return wrapper_func
-    return parse_dates
 
 
 class Series(UserList):
@@ -238,7 +245,7 @@ class TimeSeriesCore(UserDict):
     def _get_printable_slice(self, n: int):
         """Helper function for __repr__ and __str__
 
-            Returns a slice of the dataframe from beginning and end.
+        Returns a slice of the dataframe from beginning and end.
         """
 
         printable = {}
