@@ -17,14 +17,14 @@ class Frequency:
     symbol: str
 
 
-def date_parser(pos):
+def date_parser(*pos):
     def parse_dates(func):
         def wrapper_func(*args, **kwargs):
             date_format = kwargs.get("date_format", None)
             args = list(args)
             sig = inspect.signature(func)
             params = [i[0] for i in sig.parameters.items()]
-            # print(params)
+
             for j in pos:
                 kwarg = params[j]
                 date = kwargs.get(kwarg, None)

@@ -184,7 +184,7 @@ class TimeSeries(TimeSeriesCore):
 
         return self.__class__(new_ts, frequency=self.frequency.symbol)
 
-    @date_parser(pos=[1])
+    @date_parser(1)
     def calculate_returns(
         self,
         as_on: Union[str, datetime.datetime],
@@ -277,7 +277,7 @@ class TimeSeries(TimeSeriesCore):
             returns = returns ** (1 / years)
         return (current[0] if return_actual_date else as_on), returns - 1
 
-    @date_parser(pos=[1, 2])
+    @date_parser(1, 2)
     def calculate_rolling_returns(
         self,
         from_date: Union[datetime.date, str],
