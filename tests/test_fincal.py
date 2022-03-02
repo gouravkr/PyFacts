@@ -233,3 +233,8 @@ class TestReturns:
         returns1 = ts.calculate_returns("2020-04-10", interval_type='days', interval_value=90, date_format='%Y-%m-%d')
         returns2 = ts.calculate_returns("04-10-2020", interval_type='days', interval_value=90)
         assert round(returns1[1], 4) == round(returns2[1], 4) == 5.727
+
+    def test_limits(self):
+        ts = TimeSeries(self.data, frequency='M')
+        with pytest.raises(DateNotFoundError):
+            ts.calculate_returns("2020-04-25", interval_type='days', interval_value=90, closest_max_days=10)

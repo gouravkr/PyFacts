@@ -266,7 +266,8 @@ class TimeSeries(TimeSeriesCore):
 
         prev_date = as_on - relativedelta(**{interval_type: interval_value})
         current = _find_closest_date(self.data, as_on, closest_max_days, as_on_delta, if_not_found)
-        previous = _find_closest_date(self.data, prev_date, closest_max_days, prior_delta, if_not_found)
+        if current[1] != str("nan"):
+            previous = _find_closest_date(self.data, prev_date, closest_max_days, prior_delta, if_not_found)
 
         if current[1] == str("nan") or previous[1] == str("nan"):
             return as_on, float("NaN")
