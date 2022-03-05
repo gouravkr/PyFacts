@@ -18,6 +18,25 @@ class Frequency:
 
 
 def date_parser(*pos):
+    """Decorator to parse dates in any function
+
+        Accepts the 0-indexed position of the parameter for which date parsing needs to be done.
+        Works even if function is used with keyword arguments while not maintaining parameter order.
+
+    Example:
+    --------
+    >>> @date_parser(2, 3)
+    >>> def calculate_difference(diff_units='days', return_type='int', date1, date2):
+    ...     diff = date2 - date1
+    ...     if return_type == 'int':
+    ...         return diff.days
+    ...     return diff
+    ...
+    >>> calculate_difference(date1='2019-01-01'm date2='2020-01-01')
+    datetime.timedelta(365)
+
+    Each of the dates is automatically parsed into a datetime.datetime object from string.
+    """
     def parse_dates(func):
         def wrapper_func(*args, **kwargs):
             date_format = kwargs.get("date_format", None)

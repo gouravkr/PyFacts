@@ -6,14 +6,10 @@ from typing import Iterable, List, Literal, Mapping, Union
 from dateutil.relativedelta import relativedelta
 
 from .core import AllFrequencies, TimeSeriesCore, date_parser
-from .utils import (
-    _find_closest_date,
-    _interval_to_years,
-    _parse_date,
-    _preprocess_match_options,
-)
+from .utils import _find_closest_date, _interval_to_years, _preprocess_match_options
 
 
+@date_parser(0, 1)
 def create_date_series(
     start_date: Union[str, datetime.datetime],
     end_date: Union[str, datetime.datetime],
@@ -55,8 +51,8 @@ def create_date_series(
     if eomonth and frequency.days < AllFrequencies.M.days:
         raise ValueError(f"eomonth cannot be set to True if frequency is higher than {AllFrequencies.M.name}")
 
-    start_date = _parse_date(start_date)
-    end_date = _parse_date(end_date)
+    # start_date = _parse_date(start_date)
+    # end_date = _parse_date(end_date)
     datediff = (end_date - start_date).days / frequency.days + 1
     dates = []
 
@@ -261,7 +257,6 @@ class TimeSeries(TimeSeriesCore):
         (datetime.datetime(2020, 1, 1, 0, 0), .0567)
         """
 
-        # as_on = _parse_date(as_on, date_format)
         as_on_delta, prior_delta = _preprocess_match_options(as_on_match, prior_match, closest)
 
         prev_date = as_on - relativedelta(**{interval_type: interval_value})
@@ -358,9 +353,6 @@ class TimeSeries(TimeSeriesCore):
         --------
             TimeSeries.calculate_returns
         """
-
-        # from_date = _parse_date(from_date, date_format)
-        # to_date = _parse_date(to_date, date_format)
 
         if frequency is None:
             frequency = self.frequency
