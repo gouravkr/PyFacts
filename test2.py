@@ -1,37 +1,58 @@
-# type: ignore
+import pandas as pd
 
-if __name__ == "__main__":
+from fincal.fincal import TimeSeries, create_date_series
 
-    import datetime
-    import time
+dfd = pd.read_csv("test_files/nav_history_daily - Copy.csv")
+dfd = dfd[dfd["amfi_code"] == 118825].reset_index(drop=True)
+ts = TimeSeries([(i.date, i.nav) for i in dfd.itertuples()], frequency="D")
+repr(ts)
+# print(ts[['2022-01-31', '2021-05-28']])
 
-    import pandas as pd
+# rr = ts.calculate_rolling_returns(from_date='2021-01-01', to_date='2022-01-01', frequency='D', interval_type='days', interval_value=30, compounding=False)
 
-    from fincal.fincal import TimeSeries
 
-    df = pd.read_csv('test_files/msft.csv')
-    df = df.sort_values(by='Date')  # type: ignore
-    data_list = [(i.Date, i.Close) for i in df.itertuples()]
+# data = [
+#     ("2020-01-01", 10),
+#     ("2020-02-01", 12),
+#     ("2020-03-01", 14),
+#     ("2020-04-01", 16),
+#     ("2020-05-01", 18),
+#     ("2020-06-01", 20),
+#     ("2020-07-01", 22),
+#     ("2020-08-01", 24),
+#     ("2020-09-01", 26),
+#     ("2020-10-01", 28),
+#     ("2020-11-01", 30),
+#     ("2020-12-01", 32),
+#     ("2021-01-01", 34),
+# ]
 
-    start = time.time()
-    ts_data = TimeSeries(data_list, frequency='D', date_format='%d-%m-%Y')
-    print(f"Instantiation took {round((time.time() - start)*1000, 2)} ms")
-    # ts_data.fill_missing_days()
-    start = time.time()
-    # ts_data.calculate_returns(as_on=datetime.datetime(2022, 1, 4), closest='next', years=1)
-    rr = ts_data.calculate_rolling_returns(datetime.datetime(1994, 1, 1),
-                                        datetime.datetime(2022, 2, 17),
-                                        frequency='D',
-                                        as_on_match='next',
-                                        prior_match='previous',
-                                        closest='previous',
-                                        years=1)
+# ts = TimeSeries(data, frequency="M")
+# rr = ts.calculate_rolling_returns(
+#     "2020-02-01",
+#     "2021-01-01",
+#     if_not_found="nan",
+#     compounding=False,
+#     interval_type="months",
+#     interval_value=1,
+#     as_on_match="exact",
+# )
 
-    # ffill_data = ts_data.bfill()
-    print(f"Calculation took {round((time.time() - start)*1000, 2)} ms")
-    rr.sort()
-    for i in rr[:10]:
-        print(i)
-    # print(ffill_data)
-    # print(ts_data)
-    # print(repr(ts_data))
+# for i in rr:
+#     print(i)
+
+# returns = ts.calculate_returns(
+#     "2020-04-25",
+#     return_actual_date=True,
+#     closest_max_days=15,
+#     compounding=True,
+#     interval_type="days",
+#     interval_value=90,
+#     closest="previous",
+#     if_not_found="fail",
+# )
+
+# print(returns)
+
+volatility = ts.volatility(start_date="2018-01-01", end_date="2021-01-01")
+print(volatility)

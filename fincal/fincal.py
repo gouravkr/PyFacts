@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+import statistics
 from typing import Iterable, List, Literal, Mapping, Union
 
 from dateutil.relativedelta import relativedelta
@@ -381,6 +382,23 @@ class TimeSeries(TimeSeriesCore):
             rolling_returns.append(returns)
         rolling_returns.sort()
         return self.__class__(rolling_returns, self.frequency.symbol)
+
+    def volatility(
+        self,
+        start_date: Union[str, datetime.datetime],
+        end_date: Union[str, datetime.datetime],
+        annualized: bool = True,
+    ):
+        """Calculates the volatility of the time series.add()
+
+        The volatility is calculated as the standard deviaion of periodic returns.
+        The periodicity of returns is based on the periodicity of underlying data.
+        """
+        rolling_returns = self.calculate_rolling_returns(
+            from_date=start_date, to_date=end_date, interval_type=self.frequency.freq_type, compounding=False
+        )
+        sd = statistics.stdev(rolling_returns.values)
+        return sd
 
 
 if __name__ == "__main__":
