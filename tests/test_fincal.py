@@ -199,17 +199,17 @@ class TestReturns:
 
     def test_returns_calc(self):
         ts = TimeSeries(self.data, frequency="M")
-        returns = ts.calculate_returns("2021-01-01", compounding=False, interval_type="years", interval_value=1)
+        returns = ts.calculate_returns("2021-01-01", annual_compounded_returns=False, interval_type="years", interval_value=1)
         assert returns[1] == 2.4
-        returns = ts.calculate_returns("2020-04-01", compounding=False, interval_type="months", interval_value=3)
+        returns = ts.calculate_returns("2020-04-01", annual_compounded_returns=False, interval_type="months", interval_value=3)
         assert round(returns[1], 4) == 0.6
-        returns = ts.calculate_returns("2020-04-01", compounding=True, interval_type="months", interval_value=3)
+        returns = ts.calculate_returns("2020-04-01", annual_compounded_returns=True, interval_type="months", interval_value=3)
         assert round(returns[1], 4) == 5.5536
-        returns = ts.calculate_returns("2020-04-01", compounding=False, interval_type="days", interval_value=90)
+        returns = ts.calculate_returns("2020-04-01", annual_compounded_returns=False, interval_type="days", interval_value=90)
         assert round(returns[1], 4) == 0.6
-        returns = ts.calculate_returns("2020-04-01", compounding=True, interval_type="days", interval_value=90)
+        returns = ts.calculate_returns("2020-04-01", annual_compounded_returns=True, interval_type="days", interval_value=90)
         assert round(returns[1], 4) == 5.727
-        returns = ts.calculate_returns("2020-04-10", compounding=True, interval_type="days", interval_value=90)
+        returns = ts.calculate_returns("2020-04-10", annual_compounded_returns=True, interval_type="days", interval_value=90)
         assert round(returns[1], 4) == 5.727
         with pytest.raises(DateNotFoundError):
             ts.calculate_returns("2020-04-10", interval_type="days", interval_value=90, as_on_match="exact")
@@ -220,7 +220,7 @@ class TestReturns:
         ts = TimeSeries(self.data, frequency="M")
         FincalOptions.date_format = "%d-%m-%Y"
         with pytest.raises(ValueError):
-            ts.calculate_returns("2020-04-10", compounding=True, interval_type="days", interval_value=90)
+            ts.calculate_returns("2020-04-10", annual_compounded_returns=True, interval_type="days", interval_value=90)
 
         returns1 = ts.calculate_returns("2020-04-10", interval_type="days", interval_value=90, date_format="%Y-%m-%d")
         returns2 = ts.calculate_returns("10-04-2020", interval_type="days", interval_value=90)
@@ -228,7 +228,7 @@ class TestReturns:
 
         FincalOptions.date_format = "%m-%d-%Y"
         with pytest.raises(ValueError):
-            ts.calculate_returns("2020-04-10", compounding=True, interval_type="days", interval_value=90)
+            ts.calculate_returns("2020-04-10", annual_compounded_returns=True, interval_type="days", interval_value=90)
 
         returns1 = ts.calculate_returns("2020-04-10", interval_type="days", interval_value=90, date_format="%Y-%m-%d")
         returns2 = ts.calculate_returns("04-10-2020", interval_type="days", interval_value=90)
