@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+import math
 import statistics
 from typing import Iterable, List, Literal, Mapping, Union
 
@@ -191,7 +192,7 @@ class TimeSeries(TimeSeriesCore):
         closest: Literal["previous", "next", "exact"] = "previous",
         closest_max_days: int = -1,
         if_not_found: Literal["fail", "nan"] = "fail",
-        compounding: bool = True,
+        annual_compounded_returns: bool = True,
         interval_type: Literal["years", "months", "days"] = "years",
         interval_value: int = 1,
         date_format: str = None,
@@ -269,7 +270,7 @@ class TimeSeries(TimeSeriesCore):
             return as_on, float("NaN")
 
         returns = current[1] / previous[1]
-        if compounding:
+        if annual_compounded_returns:
             years = _interval_to_years(interval_type, interval_value)
             returns = returns ** (1 / years)
         return (current[0] if return_actual_date else as_on), returns - 1
@@ -284,7 +285,7 @@ class TimeSeries(TimeSeriesCore):
         prior_match: str = "closest",
         closest: Literal["previous", "next", "exact"] = "previous",
         if_not_found: Literal["fail", "nan"] = "fail",
-        compounding: bool = True,
+        annual_compounded_returns: bool = True,
         interval_type: Literal["years", "months", "days"] = "years",
         interval_value: int = 1,
         date_format: str = None,
@@ -371,7 +372,7 @@ class TimeSeries(TimeSeriesCore):
         for i in dates:
             returns = self.calculate_returns(
                 as_on=i,
-                compounding=compounding,
+                annual_compounded_returns=annual_compounded_returns,
                 interval_type=interval_type,
                 interval_value=interval_value,
                 as_on_match=as_on_match,
@@ -383,21 +384,58 @@ class TimeSeries(TimeSeriesCore):
         rolling_returns.sort()
         return self.__class__(rolling_returns, self.frequency.symbol)
 
+    @date_parser(1, 2)
     def volatility(
         self,
-        start_date: Union[str, datetime.datetime],
-        end_date: Union[str, datetime.datetime],
-        annualized: bool = True,
+        from_date: Union[datetime.date, str],
+        to_date: Union[datetime.date, str],
+        frequency: Literal["D", "W", "M", "Q", "H", "Y"] = None,
+        as_on_match: str = "closest",
+        prior_match: str = "closest",
+        closest: Literal["previous", "next", "exact"] = "previous",
+        if_not_found: Literal["fail", "nan"] = "fail",
+        annual_compounded_returns: bool = None,
+        interval_type: Literal["years", "months", "days"] = "days",
+        interval_value: int = 1,
+        date_format: str = None,
+        annualize_volatility: bool = True,
     ):
         """Calculates the volatility of the time series.add()
 
         The volatility is calculated as the standard deviaion of periodic returns.
         The periodicity of returns is based on the periodicity of underlying data.
         """
+
+        if frequency is None:
+            frequency = self.frequency
+        else:
+            try:
+                frequency = getattr(AllFrequencies, frequency)
+            except AttributeError:
+                raise ValueError(f"Invalid argument for frequency {frequency}")
+
+        if annual_compounded_returns is None:
+            annual_compounded_returns = False if frequency.days <= 366 else True
+
         rolling_returns = self.calculate_rolling_returns(
-            from_date=start_date, to_date=end_date, interval_type=self.frequency.freq_type, compounding=False
+            from_date=from_date,
+            to_date=to_date,
+            frequency=frequency.symbol,
+            as_on_match=as_on_match,
+            prior_match=prior_match,
+            closest=closest,
+            if_not_found=if_not_found,
+            annual_compounded_returns=annual_compounded_returns,
+            interval_type=interval_type,
+            interval_value=interval_value,
         )
         sd = statistics.stdev(rolling_returns.values)
+        if annualize_volatility:
+            if interval_type == "months":
+                sd *= math.sqrt(12)
+            elif interval_type == "days":
+                sd *= math.sqrt(252)
+
         return sd
 
 
