@@ -13,7 +13,7 @@ THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 sample_data_path = os.path.join(THIS_DIR, "data")
 
 
-def create_test_data(
+def create_random_test_data(
     frequency: str,
     eomonth: bool,
     n: int,
@@ -53,6 +53,30 @@ def create_test_data(
         data = dict(data)
 
     return data
+
+
+def create_organised_test_data() -> dict:
+    """Creates organised test data so that output is exactly same in each run"""
+
+    all_dates, all_values = [], []
+    prev_date, prev_number = datetime.datetime(2018, 1, 1), 1000
+
+    for i in range(1, 1000):
+        if i % 5 == 0:
+            prev_date += datetime.timedelta(days=3)
+        else:
+            prev_date += datetime.timedelta(days=1)
+        all_dates.append(prev_date)
+
+    for i in range(1, 1000):
+        rem = i % 7
+        if rem % 2:
+            prev_number -= rem
+        else:
+            prev_number += rem
+        all_values.append(prev_number)
+
+    return dict(zip(all_dates, all_values))
 
 
 class TestDateSeries:
@@ -119,7 +143,9 @@ class TestDateSeries:
 
 class TestFincalBasic:
     def test_creation(self):
-        data = create_test_data(frequency="D", eomonth=False, n=50, gaps=0, month_position="start", date_as_str=True)
+        data = create_random_test_data(
+            frequency="D", eomonth=False, n=50, gaps=0, month_position="start", date_as_str=True
+        )
         time_series = TimeSeries(data, frequency="D")
         assert len(time_series) == 50
         assert isinstance(time_series.frequency, Frequency)
@@ -128,12 +154,16 @@ class TestFincalBasic:
         ffill_data = time_series.ffill()
         assert len(ffill_data) == 50
 
-        data = create_test_data(frequency="D", eomonth=False, n=500, gaps=0.1, month_position="start", date_as_str=True)
+        data = create_random_test_data(
+            frequency="D", eomonth=False, n=500, gaps=0.1, month_position="start", date_as_str=True
+        )
         time_series = TimeSeries(data, frequency="D")
         assert len(time_series) == 450
 
     def test_fill(self):
-        data = create_test_data(frequency="D", eomonth=False, n=500, gaps=0.1, month_position="start", date_as_str=True)
+        data = create_random_test_data(
+            frequency="D", eomonth=False, n=500, gaps=0.1, month_position="start", date_as_str=True
+        )
         time_series = TimeSeries(data, frequency="D")
         ffill_data = time_series.ffill()
         assert len(ffill_data) >= 498
@@ -142,7 +172,9 @@ class TestFincalBasic:
         assert ffill_data is None
         assert len(time_series) >= 498
 
-        data = create_test_data(frequency="D", eomonth=False, n=500, gaps=0.1, month_position="start", date_as_str=True)
+        data = create_random_test_data(
+            frequency="D", eomonth=False, n=500, gaps=0.1, month_position="start", date_as_str=True
+        )
         time_series = TimeSeries(data, frequency="D")
         bfill_data = time_series.bfill()
         assert len(bfill_data) >= 498
@@ -160,7 +192,9 @@ class TestFincalBasic:
         assert bf["2021-01-03"][1] == 240
 
     def test_iloc_slicing(self):
-        data = create_test_data(frequency="D", eomonth=False, n=50, gaps=0, month_position="start", date_as_str=True)
+        data = create_random_test_data(
+            frequency="D", eomonth=False, n=50, gaps=0, month_position="start", date_as_str=True
+        )
         time_series = TimeSeries(data, frequency="D")
         assert time_series.iloc[0] is not None
         assert time_series.iloc[:3] is not None
@@ -170,7 +204,9 @@ class TestFincalBasic:
         assert len(time_series.iloc[10:20]) == 10
 
     def test_key_slicing(self):
-        data = create_test_data(frequency="D", eomonth=False, n=50, gaps=0, month_position="start", date_as_str=True)
+        data = create_random_test_data(
+            frequency="D", eomonth=False, n=50, gaps=0, month_position="start", date_as_str=True
+        )
         time_series = TimeSeries(data, frequency="D")
         available_date = time_series.iloc[5][0]
         assert time_series[available_date] is not None
@@ -199,17 +235,29 @@ class TestReturns:
 
     def test_returns_calc(self):
         ts = TimeSeries(self.data, frequency="M")
-        returns = ts.calculate_returns("2021-01-01", annual_compounded_returns=False, interval_type="years", interval_value=1)
+        returns = ts.calculate_returns(
+            "2021-01-01", annual_compounded_returns=False, interval_type="years", interval_value=1
+        )
         assert returns[1] == 2.4
-        returns = ts.calculate_returns("2020-04-01", annual_compounded_returns=False, interval_type="months", interval_value=3)
+        returns = ts.calculate_returns(
+            "2020-04-01", annual_compounded_returns=False, interval_type="months", interval_value=3
+        )
         assert round(returns[1], 4) == 0.6
-        returns = ts.calculate_returns("2020-04-01", annual_compounded_returns=True, interval_type="months", interval_value=3)
+        returns = ts.calculate_returns(
+            "2020-04-01", annual_compounded_returns=True, interval_type="months", interval_value=3
+        )
         assert round(returns[1], 4) == 5.5536
-        returns = ts.calculate_returns("2020-04-01", annual_compounded_returns=False, interval_type="days", interval_value=90)
+        returns = ts.calculate_returns(
+            "2020-04-01", annual_compounded_returns=False, interval_type="days", interval_value=90
+        )
         assert round(returns[1], 4) == 0.6
-        returns = ts.calculate_returns("2020-04-01", annual_compounded_returns=True, interval_type="days", interval_value=90)
+        returns = ts.calculate_returns(
+            "2020-04-01", annual_compounded_returns=True, interval_type="days", interval_value=90
+        )
         assert round(returns[1], 4) == 5.727
-        returns = ts.calculate_returns("2020-04-10", annual_compounded_returns=True, interval_type="days", interval_value=90)
+        returns = ts.calculate_returns(
+            "2020-04-10", annual_compounded_returns=True, interval_type="days", interval_value=90
+        )
         assert round(returns[1], 4) == 5.727
         with pytest.raises(DateNotFoundError):
             ts.calculate_returns("2020-04-10", interval_type="days", interval_value=90, as_on_match="exact")
@@ -239,3 +287,16 @@ class TestReturns:
         FincalOptions.date_format = "%Y-%m-%d"
         with pytest.raises(DateNotFoundError):
             ts.calculate_returns("2020-04-25", interval_type="days", interval_value=90, closest_max_days=10)
+
+
+class TestVolatility:
+    data = create_organised_test_data()
+
+    def test_volatility_basic(self):
+        ts = TimeSeries(self.data, frequency="D")
+        sd = ts.volatility()
+        assert len(ts) == 999
+        assert round(sd, 6) == 0.057391
+
+        sd = ts.volatility(annualize_volatility=False)
+        assert round(sd, 6) == 0.003004
