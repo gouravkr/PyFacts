@@ -9,6 +9,7 @@ from .exceptions import DateNotFoundError, DateOutOfRangeError
 class FincalOptions:
     date_format: str = "%Y-%m-%d"
     closest: str = "before"  # after
+    traded_days: int = 365
 
 
 def _parse_date(date: str, date_format: str = None):

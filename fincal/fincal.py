@@ -7,8 +7,13 @@ from typing import Iterable, List, Literal, Mapping, Union
 
 from dateutil.relativedelta import relativedelta
 
-from .core import AllFrequencies, TimeSeriesCore, date_parser
-from .utils import _find_closest_date, _interval_to_years, _preprocess_match_options
+from .core import AllFrequencies, Series, TimeSeriesCore, date_parser
+from .utils import (
+    FincalOptions,
+    _find_closest_date,
+    _interval_to_years,
+    _preprocess_match_options,
+)
 
 
 @date_parser(0, 1)
@@ -17,6 +22,7 @@ def create_date_series(
     end_date: Union[str, datetime.datetime],
     frequency: Literal["D", "W", "M", "Q", "H", "Y"],
     eomonth: bool = False,
+    skip_weekends: bool = False,
 ) -> List[datetime.datetime]:
     """Create a date series with a specified frequency
 
@@ -53,8 +59,6 @@ def create_date_series(
     if eomonth and frequency.days < AllFrequencies.M.days:
         raise ValueError(f"eomonth cannot be set to True if frequency is higher than {AllFrequencies.M.name}")
 
-    # start_date = _parse_date(start_date)
-    # end_date = _parse_date(end_date)
     datediff = (end_date - start_date).days / frequency.days + 1
     dates = []
 
@@ -67,9 +71,12 @@ def create_date_series(
             date = date.replace(day=1).replace(month=next_month) - relativedelta(days=1)
 
         if date <= end_date:
-            dates.append(date)
+            if frequency.days > 1 or not skip_weekends:
+                dates.append(date)
+            elif date.weekday() < 5:
+                dates.append(date)
 
-    return dates
+    return Series(dates, data_type="date")
 
 
 class TimeSeries(TimeSeriesCore):
@@ -387,8 +394,8 @@ class TimeSeries(TimeSeriesCore):
     @date_parser(1, 2)
     def volatility(
         self,
-        from_date: Union[datetime.date, str],
-        to_date: Union[datetime.date, str],
+        from_date: Union[datetime.date, str] = None,
+        to_date: Union[datetime.date, str] = None,
         frequency: Literal["D", "W", "M", "Q", "H", "Y"] = None,
         as_on_match: str = "closest",
         prior_match: str = "closest",
@@ -399,6 +406,7 @@ class TimeSeries(TimeSeriesCore):
         interval_value: int = 1,
         date_format: str = None,
         annualize_volatility: bool = True,
+        traded_days: int = None,
     ):
         """Calculates the volatility of the time series.add()
 
@@ -413,6 +421,11 @@ class TimeSeries(TimeSeriesCore):
                 frequency = getattr(AllFrequencies, frequency)
             except AttributeError:
                 raise ValueError(f"Invalid argument for frequency {frequency}")
+
+        if from_date is None:
+            from_date = self.start_date + relativedelta(**{interval_type: interval_value})
+        if to_date is None:
+            to_date = self.end_date
 
         if annual_compounded_returns is None:
             annual_compounded_returns = False if frequency.days <= 366 else True
@@ -431,10 +444,13 @@ class TimeSeries(TimeSeriesCore):
         )
         sd = statistics.stdev(rolling_returns.values)
         if annualize_volatility:
+            if traded_days is None:
+                traded_days = FincalOptions.traded_days
+
             if interval_type == "months":
                 sd *= math.sqrt(12)
             elif interval_type == "days":
-                sd *= math.sqrt(252)
+                sd *= math.sqrt(traded_days)
 
         return sd
 
