@@ -37,6 +37,7 @@ def date_parser(*pos):
 
     Each of the dates is automatically parsed into a datetime.datetime object from string.
     """
+
     def parse_dates(func):
         def wrapper_func(*args, **kwargs):
             date_format = kwargs.get("date_format", None)
@@ -49,8 +50,14 @@ def date_parser(*pos):
                 date = kwargs.get(kwarg, None)
                 in_args = False
                 if date is None:
-                    date = args[j]
+                    try:
+                        date = args[j]
+                    except IndexError:
+                        pass
                     in_args = True
+
+                if date is None:
+                    continue
 
                 parsed_date = _parse_date(date, date_format)
                 if not in_args:
