@@ -13,3 +13,22 @@ Fincal aims to simplify things by allowing you to:
 * Completing series with missing data points using forward fill and backward fill
 
 ## Examples
+
+
+
+## To-do
+
+### Core features
+- [ ] Add __setitem__
+- [ ] Create emtpy TimeSeries object
+- [ ] Read from CSV
+- [ ] Write to CSV
+- [ ] Convert to dict
+- [ ] Convert to list of dicts
+### Fincal features
+- [ ] Sync two TimeSeries
+- [ ] Average rolling return
+- [ ] Sharpe ratio
+- [ ] Jensen's Alpha
+- [ ] Beta
+- [ ] Max drawdown
