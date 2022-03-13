@@ -407,7 +407,7 @@ class TimeSeries(TimeSeriesCore):
         if_not_found: Literal["fail", "nan"] = "fail",
         annual_compounded_returns: bool = None,
         date_format: str = None,
-    ):
+    ) -> float:
         """Calculates the volatility of the time series.add()
 
         The volatility is calculated as the standard deviaion of periodic returns.
@@ -431,6 +431,20 @@ class TimeSeries(TimeSeriesCore):
             Number of traded days per year to be considered for annualizing volatility.
             Only used when annualizing volatility for a time series with daily frequency.
             If not provided, will use the value in FincalOptions.traded_days.
+
+        Remaining options are passed on to rolling_return function.
+
+        Returns:
+        -------
+            Returns the volatility number as float
+
+        Raises:
+        -------
+            ValueError: If frequency string is outside valid values
+
+        Also see:
+        --------
+            TimeSeries.calculate_rolling_returns()
         """
 
         if frequency is None:
@@ -472,6 +486,36 @@ class TimeSeries(TimeSeriesCore):
                 sd *= math.sqrt(traded_days)
 
         return sd
+
+    def average_rolling_return(self, **kwargs) -> float:
+        """Calculates the average rolling return for a given period
+
+        Parameters
+        ----------
+        kwargs: parameters to be passed to the calculate_rolling_returns() function
+
+        Returns
+        -------
+        float
+            returns the average rolling return for a given period
+
+        Also see:
+        ---------
+        TimeSeries.calculate_rolling_returns()
+        """
+
+        kwargs["return_period_unit"] = kwargs.get("return_period_unit", self.frequency.freq_type)
+        kwargs["return_period_value"] = kwargs.get("return_period_value", 1)
+        kwargs["to_date"] = kwargs.get("to_date", self.end_date)
+
+        if kwargs.get("from_date", None) is None:
+            start_date = self.start_date + relativedelta(
+                **{kwargs["return_period_unit"]: kwargs["return_period_value"]}
+            )
+            kwargs["from_date"] = start_date
+
+        rr = self.calculate_rolling_returns(**kwargs)
+        return statistics.mean(rr.values)
 
 
 if __name__ == "__main__":
