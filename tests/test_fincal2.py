@@ -168,3 +168,12 @@ class TestVolatility:
         assert round(sd, 6) == 0.023164
         sd = ts.volatility(from_date="2017-10-01", to_date="2019-08-31", annualize_volatility=True)
         assert round(sd, 6) == 0.050559
+        sd = ts.volatility(from_date="2017-02-01", frequency="M", return_period_unit="months")
+        assert round(sd, 6) == 0.050884
+        sd = ts.volatility(
+            frequency="M",
+            return_period_unit="months",
+            return_period_value=3,
+            annualize_volatility=False,
+        )
+        assert round(sd, 6) == 0.020547
