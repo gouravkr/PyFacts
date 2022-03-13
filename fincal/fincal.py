@@ -200,8 +200,8 @@ class TimeSeries(TimeSeriesCore):
         closest_max_days: int = -1,
         if_not_found: Literal["fail", "nan"] = "fail",
         annual_compounded_returns: bool = True,
-        interval_type: Literal["years", "months", "days"] = "years",
-        interval_value: int = 1,
+        return_period_unit: Literal["years", "months", "days"] = "years",
+        return_period_value: int = 1,
         date_format: str = None,
     ) -> float:
         """Method to calculate returns for a certain time-period as on a particular date
@@ -239,10 +239,10 @@ class TimeSeries(TimeSeriesCore):
         compounding : bool, optional
             Whether the return should be compounded annually.
 
-        interval_type : 'years', 'months', 'days'
+        return_period_unit : 'years', 'months', 'days'
             The type of time period to use for return calculation.
 
-        interval_value : int
+        return_period_value : int
             The value of the specified interval type over which returns needs to be calculated.
 
         date_format: str
@@ -268,7 +268,7 @@ class TimeSeries(TimeSeriesCore):
 
         as_on_delta, prior_delta = _preprocess_match_options(as_on_match, prior_match, closest)
 
-        prev_date = as_on - relativedelta(**{interval_type: interval_value})
+        prev_date = as_on - relativedelta(**{return_period_unit: return_period_value})
         current = _find_closest_date(self.data, as_on, closest_max_days, as_on_delta, if_not_found)
         if current[1] != str("nan"):
             previous = _find_closest_date(self.data, prev_date, closest_max_days, prior_delta, if_not_found)
@@ -278,7 +278,7 @@ class TimeSeries(TimeSeriesCore):
 
         returns = current[1] / previous[1]
         if annual_compounded_returns:
-            years = _interval_to_years(interval_type, interval_value)
+            years = _interval_to_years(return_period_unit, return_period_value)
             returns = returns ** (1 / years)
         return (current[0] if return_actual_date else as_on), returns - 1
 
@@ -293,8 +293,8 @@ class TimeSeries(TimeSeriesCore):
         closest: Literal["previous", "next", "exact"] = "previous",
         if_not_found: Literal["fail", "nan"] = "fail",
         annual_compounded_returns: bool = True,
-        interval_type: Literal["years", "months", "days"] = "years",
-        interval_value: int = 1,
+        return_period_unit: Literal["years", "months", "days"] = "years",
+        return_period_value: int = 1,
         date_format: str = None,
     ) -> TimeSeries:
         """Calculate the returns on a rolling basis.
@@ -339,10 +339,10 @@ class TimeSeries(TimeSeriesCore):
         compounding : bool, optional
             Should the returns be compounded annually.
 
-        interval_type : years | month | days
+        return_period_unit : years | month | days
             The interval for the return calculation.
 
-        interval_value : int, optional
+        return_period_value : int, optional
             The value of the interval for return calculation.
 
         date_format : str, optional
@@ -380,8 +380,8 @@ class TimeSeries(TimeSeriesCore):
             returns = self.calculate_returns(
                 as_on=i,
                 annual_compounded_returns=annual_compounded_returns,
-                interval_type=interval_type,
-                interval_value=interval_value,
+                return_period_unit=return_period_unit,
+                return_period_value=return_period_value,
                 as_on_match=as_on_match,
                 prior_match=prior_match,
                 closest=closest,
@@ -396,22 +396,41 @@ class TimeSeries(TimeSeriesCore):
         self,
         from_date: Union[datetime.date, str] = None,
         to_date: Union[datetime.date, str] = None,
+        annualize_volatility: bool = True,
+        traded_days: int = None,
         frequency: Literal["D", "W", "M", "Q", "H", "Y"] = None,
+        return_period_unit: Literal["years", "months", "days"] = "days",
+        return_period_value: int = 1,
         as_on_match: str = "closest",
         prior_match: str = "closest",
         closest: Literal["previous", "next", "exact"] = "previous",
         if_not_found: Literal["fail", "nan"] = "fail",
         annual_compounded_returns: bool = None,
-        interval_type: Literal["years", "months", "days"] = "days",
-        interval_value: int = 1,
         date_format: str = None,
-        annualize_volatility: bool = True,
-        traded_days: int = None,
     ):
         """Calculates the volatility of the time series.add()
 
         The volatility is calculated as the standard deviaion of periodic returns.
         The periodicity of returns is based on the periodicity of underlying data.
+
+        Parameters:
+        ----------
+        from_date: datetime.datetime | str, optional
+            Starting date for the volatility calculation.
+            Default is the first date on which volatility can be calculated based on the interval type.
+
+        to_date: datetime.datetime | str, optional
+            Ending date for the volatility calculation.
+            Default is the last date in the TimeSeries.
+
+        annualize_volatility: bool, default True
+            Whether the volatility number should be annualized.
+            Multiplies the standard deviation with the square root of the number of periods in a year
+
+        traded_days: bool, optional
+            Number of traded days per year to be considered for annualizing volatility.
+            Only used when annualizing volatility for a time series with daily frequency.
+            If not provided, will use the value in FincalOptions.traded_days.
         """
 
         if frequency is None:
@@ -423,7 +442,7 @@ class TimeSeries(TimeSeriesCore):
                 raise ValueError(f"Invalid argument for frequency {frequency}")
 
         if from_date is None:
-            from_date = self.start_date + relativedelta(**{interval_type: interval_value})
+            from_date = self.start_date + relativedelta(**{return_period_unit: return_period_value})
         if to_date is None:
             to_date = self.end_date
 
@@ -439,17 +458,17 @@ class TimeSeries(TimeSeriesCore):
             closest=closest,
             if_not_found=if_not_found,
             annual_compounded_returns=annual_compounded_returns,
-            interval_type=interval_type,
-            interval_value=interval_value,
+            return_period_unit=return_period_unit,
+            return_period_value=return_period_value,
         )
         sd = statistics.stdev(rolling_returns.values)
         if annualize_volatility:
             if traded_days is None:
                 traded_days = FincalOptions.traded_days
 
-            if interval_type == "months":
+            if return_period_unit == "months":
                 sd *= math.sqrt(12)
-            elif interval_type == "days":
+            elif return_period_unit == "days":
                 sd *= math.sqrt(traded_days)
 
         return sd
