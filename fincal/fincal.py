@@ -517,6 +517,24 @@ class TimeSeries(TimeSeriesCore):
         rr = self.calculate_rolling_returns(**kwargs)
         return statistics.mean(rr.values)
 
+    def max_drawdown(self):
+        max_val_dict = {}
+
+        prev_val = 0
+        prev_date = list(self.data)[0]
+
+        for dt, val in self.data.items():
+            if val > prev_val:
+                max_val_dict[dt] = (dt, val, 0)
+                prev_date, prev_val = dt, val
+            else:
+                max_val_dict[dt] = (prev_date, prev_val, val / prev_val - 1)
+
+        max_drawdown = min(max_val_dict.items(), key=lambda x: x[1][2])
+        max_drawdown = dict(start_date=max_drawdown[1][0], end_date=max_drawdown[0], drawdown=max_drawdown[1][2])
+
+        return max_drawdown
+
 
 if __name__ == "__main__":
     date_series = [
