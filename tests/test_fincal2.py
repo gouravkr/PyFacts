@@ -1,12 +1,13 @@
 import datetime
 import math
 import random
+from unittest import skip
 
 import pytest
 from dateutil.relativedelta import relativedelta
 from fincal.core import AllFrequencies, Frequency
 from fincal.exceptions import DateNotFoundError
-from fincal.fincal import TimeSeries, create_date_series
+from fincal.fincal import MaxDrawdown, TimeSeries, create_date_series
 from fincal.utils import FincalOptions
 
 
@@ -77,7 +78,9 @@ def create_test_timeseries(
 
     start_date = datetime.datetime(2017, 1, 1)
     timedelta_dict = {
-        frequency.freq_type: int(frequency.value * num * (7 / 5 if frequency == "D" and skip_weekends else 1))
+        frequency.freq_type: int(
+            frequency.value * num * (7 / 5 if frequency == AllFrequencies.D and skip_weekends else 1)
+        )
     }
     end_date = start_date + relativedelta(**timedelta_dict)
     dates = create_date_series(start_date, end_date, frequency.symbol, skip_weekends=skip_weekends)
@@ -88,7 +91,7 @@ def create_test_timeseries(
 
 class TestReturns:
     def test_returns_calc(self):
-        ts = create_test_timeseries()
+        ts = create_test_timeseries(AllFrequencies.D, skip_weekends=True)
         returns = ts.calculate_returns(
             "2020-01-01", annual_compounded_returns=False, return_period_unit="years", return_period_value=1
         )
@@ -120,7 +123,7 @@ class TestReturns:
             ts.calculate_returns("2020-04-04", return_period_unit="months", return_period_value=3, prior_match="exact")
 
     def test_date_formats(self):
-        ts = create_test_timeseries()
+        ts = create_test_timeseries(AllFrequencies.D, skip_weekends=True)
         FincalOptions.date_format = "%d-%m-%Y"
         with pytest.raises(ValueError):
             ts.calculate_returns(
@@ -147,7 +150,7 @@ class TestReturns:
 
     def test_limits(self):
         FincalOptions.date_format = "%Y-%m-%d"
-        ts = create_test_timeseries()
+        ts = create_test_timeseries(AllFrequencies.D)
         with pytest.raises(DateNotFoundError):
             ts.calculate_returns("2020-11-25", return_period_unit="days", return_period_value=90, closest_max_days=10)
 
@@ -177,3 +180,31 @@ class TestVolatility:
             annualize_volatility=False,
         )
         assert round(sd, 6) == 0.020547
+
+
+class TestDrawdown:
+    def test_daily_ts(self):
+        ts = create_test_timeseries(AllFrequencies.D, skip_weekends=True)
+        mdd = ts.max_drawdown()
+        assert isinstance(mdd, dict)
+        assert len(mdd) == 3
+        assert all(i in mdd for i in ["start_date", "end_date", "drawdown"])
+        expeced_response = {
+            "start_date": datetime.datetime(2017, 6, 6, 0, 0),
+            "end_date": datetime.datetime(2017, 7, 31, 0, 0),
+            "drawdown": -0.028293686030751997,
+        }
+        assert mdd == expeced_response
+
+    def test_weekly_ts(self):
+        ts = create_test_timeseries(AllFrequencies.W, mu=1, sigma=0.5)
+        mdd = ts.max_drawdown()
+        assert isinstance(mdd, dict)
+        assert len(mdd) == 3
+        assert all(i in mdd for i in ["start_date", "end_date", "drawdown"])
+        expeced_response = {
+            "start_date": datetime.datetime(2019, 2, 17, 0, 0),
+            "end_date": datetime.datetime(2019, 11, 17, 0, 0),
+            "drawdown": -0.2584760499552089,
+        }
+        assert mdd == expeced_response
