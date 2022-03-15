@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime
 import math
 import statistics
-from typing import Iterable, List, Literal, Mapping, Union
+from typing import Iterable, List, Literal, Mapping, TypedDict, Union
 
 from dateutil.relativedelta import relativedelta
 
@@ -14,6 +14,12 @@ from .utils import (
     _interval_to_years,
     _preprocess_match_options,
 )
+
+
+class MaxDrawdown(TypedDict):
+    start_date: datetime.datetime
+    end_date: datetime.datetime
+    drawdown: float
 
 
 @date_parser(0, 1)
@@ -115,11 +121,11 @@ class TimeSeries(TimeSeriesCore):
 
         super().__init__(data, frequency, date_format)
 
-    def info(self):
+    def info(self) -> str:
         """Summary info about the TimeSeries object"""
 
-        total_dates = len(self.data.keys())
-        res_string = "First date: {}\nLast date: {}\nNumber of rows: {}"
+        total_dates: int = len(self.data.keys())
+        res_string: str = "First date: {}\nLast date: {}\nNumber of rows: {}"
         return res_string.format(self.start_date, self.end_date, total_dates)
 
     def ffill(self, inplace: bool = False, limit: int = None) -> Union[TimeSeries, None]:
@@ -138,7 +144,7 @@ class TimeSeries(TimeSeriesCore):
             Returns a TimeSeries object if inplace is False, otherwise None
         """
 
-        eomonth = True if self.frequency.days >= AllFrequencies.M.days else False
+        eomonth: bool = True if self.frequency.days >= AllFrequencies.M.days else False
         dates_to_fill = create_date_series(self.start_date, self.end_date, self.frequency.symbol, eomonth)
 
         new_ts = dict()
@@ -171,7 +177,7 @@ class TimeSeries(TimeSeriesCore):
             Returns a TimeSeries object if inplace is False, otherwise None
         """
 
-        eomonth = True if self.frequency.days >= AllFrequencies.M.days else False
+        eomonth: bool = True if self.frequency.days >= AllFrequencies.M.days else False
         dates_to_fill = create_date_series(self.start_date, self.end_date, self.frequency.symbol, eomonth)
         dates_to_fill.append(self.end_date)
 
@@ -517,21 +523,31 @@ class TimeSeries(TimeSeriesCore):
         rr = self.calculate_rolling_returns(**kwargs)
         return statistics.mean(rr.values)
 
-    def max_drawdown(self):
-        max_val_dict = {}
+    def max_drawdown(self) -> MaxDrawdown:
+        """Calculates the maximum fall the stock has taken between any two points.
 
-        prev_val = 0
-        prev_date = list(self.data)[0]
+        Returns
+        -------
+        MaxDrawdown
+            Returns the start_date, end_date, and the drawdown value in decimal.
+        """
+
+        drawdowns: dict = dict()
+
+        prev_val: float = 0
+        prev_date: datetime.datetime = list(self.data)[0]
 
         for dt, val in self.data.items():
             if val > prev_val:
-                max_val_dict[dt] = (dt, val, 0)
+                drawdowns[dt] = (dt, val, 0)
                 prev_date, prev_val = dt, val
             else:
-                max_val_dict[dt] = (prev_date, prev_val, val / prev_val - 1)
+                drawdowns[dt] = (prev_date, prev_val, val / prev_val - 1)
 
-        max_drawdown = min(max_val_dict.items(), key=lambda x: x[1][2])
-        max_drawdown = dict(start_date=max_drawdown[1][0], end_date=max_drawdown[0], drawdown=max_drawdown[1][2])
+        max_drawdown = min(drawdowns.items(), key=lambda x: x[1][2])
+        max_drawdown: MaxDrawdown = dict(
+            start_date=max_drawdown[1][0], end_date=max_drawdown[0], drawdown=max_drawdown[1][2]
+        )
 
         return max_drawdown
 
