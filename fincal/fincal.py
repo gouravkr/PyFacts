@@ -7,7 +7,7 @@ from typing import Iterable, List, Literal, Mapping, Union
 
 from dateutil.relativedelta import relativedelta
 
-from .core import AllFrequencies, Series, TimeSeriesCore, date_parser
+from .core import AllFrequencies, Frequency, Series, TimeSeriesCore, date_parser
 from .utils import (
     FincalOptions,
     _find_closest_date,
@@ -534,6 +534,30 @@ class TimeSeries(TimeSeriesCore):
         max_drawdown = dict(start_date=max_drawdown[1][0], end_date=max_drawdown[0], drawdown=max_drawdown[1][2])
 
         return max_drawdown
+
+    def expand(
+        self, to_frequency: Literal["D", "W", "M", "Q", "H"], method: Literal["ffill", "bfill", "interpolate"]
+    ) -> TimeSeries:
+        try:
+            to_frequency: Frequency = getattr(AllFrequencies, to_frequency)
+        except AttributeError:
+            raise ValueError(f"Invalid argument for to_frequency {to_frequency}")
+
+        if to_frequency.days >= self.frequency.days:
+            raise ValueError("TimeSeries can be only expanded to a higher frequency")
+
+        new_dates = create_date_series(self.start_date, self.end_date, frequency=to_frequency.symbol)
+        new_ts: dict = {dt: self.data.get(dt, None) for dt in new_dates}
+        output_ts: TimeSeries = TimeSeries(new_ts, frequency=to_frequency.symbol)
+
+        if method == "ffill":
+            output_ts.ffill(inplace=True)
+        elif method == "bfill":
+            output_ts.bfill(inplace=True)
+        else:
+            raise NotImplementedError(f"Method {method} not implemented")
+
+        return output_ts
 
 
 if __name__ == "__main__":
