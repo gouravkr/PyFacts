@@ -236,12 +236,12 @@ class TimeSeriesCore(UserDict):
         self.data = dict(data)
         if len(self.data) != len(data):
             print("Warning: The input data contains duplicate dates which have been ignored.")
-        self.frequency = getattr(AllFrequencies, frequency)
-        self.iter_num = -1
-        self._dates = None
-        self._values = None
-        self._start_date = None
-        self._end_date = None
+        self.frequency: Frequency = getattr(AllFrequencies, frequency)
+        self.iter_num: int = -1
+        self._dates: list = None
+        self._values: list = None
+        self._start_date: datetime.datetime = None
+        self._end_date: datetime.datetime = None
 
     @property
     def dates(self) -> Series:
