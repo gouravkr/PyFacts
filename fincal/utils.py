@@ -10,6 +10,7 @@ class FincalOptions:
     date_format: str = "%Y-%m-%d"
     closest: str = "before"  # after
     traded_days: int = 365
+    get_closest: str = "exact"
 
 
 def _parse_date(date: str, date_format: str = None):
