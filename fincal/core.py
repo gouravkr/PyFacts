@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from numbers import Number
 from typing import Iterable, List, Literal, Mapping, Sequence, Union
 
-from .utils import _parse_date, _preprocess_timeseries
+from .utils import FincalOptions, _parse_date, _preprocess_timeseries
 
 
 @dataclass(frozen=True)
@@ -375,6 +375,33 @@ class TimeSeriesCore(UserDict):
     @date_parser(1)
     def __contains__(self, key: object) -> bool:
         return super().__contains__(key)
+
+    @date_parser(1)
+    def get(self, date: Union[str, datetime.datetime], default=None, closest=None):
+
+        if closest is None:
+            closest = FincalOptions.get_closest
+
+        if closest == "exact":
+            try:
+                item = self._get_item_from_date(date)
+                return item
+            except KeyError:
+                return default
+
+        if closest == "previous":
+            delta = datetime.timedelta(-1)
+        elif closest == "next":
+            delta = datetime.timedelta(1)
+        else:
+            raise ValueError(f"Invalid argument from closest {closest!r}")
+
+        while True:
+            try:
+                item = self._get_item_from_date(date)
+                return item
+            except KeyError:
+                date += delta
 
     @property
     def iloc(self) -> Mapping:
