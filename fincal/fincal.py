@@ -552,7 +552,10 @@ class TimeSeries(TimeSeriesCore):
         return max_drawdown
 
     def expand(
-        self, to_frequency: Literal["D", "W", "M", "Q", "H"], method: Literal["ffill", "bfill", "interpolate"]
+        self,
+        to_frequency: Literal["D", "W", "M", "Q", "H"],
+        method: Literal["ffill", "bfill", "interpolate"],
+        skip_weekends: bool = False,
     ) -> TimeSeries:
         try:
             to_frequency: Frequency = getattr(AllFrequencies, to_frequency)
@@ -562,8 +565,10 @@ class TimeSeries(TimeSeriesCore):
         if to_frequency.days >= self.frequency.days:
             raise ValueError("TimeSeries can be only expanded to a higher frequency")
 
-        new_dates = create_date_series(self.start_date, self.end_date, frequency=to_frequency.symbol)
-        new_ts: dict = {dt: self.data.get(dt, None) for dt in new_dates}
+        new_dates = create_date_series(
+            self.start_date, self.end_date, frequency=to_frequency.symbol, skip_weekends=skip_weekends
+        )
+        new_ts: dict = {dt: self.get(dt, closest="previous")[1] for dt in new_dates}
         output_ts: TimeSeries = TimeSeries(new_ts, frequency=to_frequency.symbol)
 
         if method == "ffill":
