@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime
 import inspect
 from collections import UserDict, UserList
@@ -423,12 +425,12 @@ class TimeSeriesCore(UserDict):
 
         return _IndexSlicer(self)
 
-    def head(self, n: int = 6):
+    def head(self, n: int = 6) -> TimeSeriesCore:
         """Returns the first n items of the TimeSeries object"""
 
         return self.iloc[:n]
 
-    def tail(self, n: int = 6):
+    def tail(self, n: int = 6) -> TimeSeriesCore:
         """Returns the last n items of the TimeSeries object"""
 
         return self.iloc[-n:]
