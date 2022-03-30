@@ -116,7 +116,7 @@ def _find_closest_date(
     raise ValueError(f"Invalid argument for if_not_found: {if_not_found}")
 
 
-def _interval_to_years(interval_type: Literal["years", "months", "day"], interval_value: int) -> int:
+def _interval_to_years(interval_type: Literal["years", "months", "day"], interval_value: int) -> float:
     """Converts any time period to years for use with compounding functions"""
 
     year_conversion_factor = {"years": 1, "months": 12, "days": 365}
