@@ -21,14 +21,14 @@ Fincal aims to simplify things by allowing you to:
 ### Core features
 - [ ] Add __setitem__
 - [ ] Create emtpy TimeSeries object
-- [ ] Read from CSV
+- [x] Read from CSV
 - [ ] Write to CSV
 - [ ] Convert to dict
 - [ ] Convert to list of dicts
 ### Fincal features
 - [ ] Sync two TimeSeries
-- [ ] Average rolling return
+- [x] Average rolling return
 - [ ] Sharpe ratio
 - [ ] Jensen's Alpha
 - [ ] Beta
-- [ ] Max drawdown
+- [x] Max drawdown
