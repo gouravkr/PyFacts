@@ -298,6 +298,60 @@ class TestReturns:
         with pytest.raises(DateNotFoundError):
             ts.calculate_returns("2020-11-25", return_period_unit="days", return_period_value=90, closest_max_days=10)
 
+    def test_rolling_returns(self):
+        # Yet to be written
+        return True
+
+
+class TestExpand:
+    def test_weekly_to_daily(self):
+        ts_data = create_test_data(AllFrequencies.W, 10)
+        ts = TimeSeries(ts_data, "W")
+        expanded_ts = ts.expand("D", "ffill")
+        assert len(expanded_ts) == 64
+        assert expanded_ts.frequency.name == "daily"
+        assert expanded_ts.iloc[0][1] == expanded_ts.iloc[1][1]
+
+    def test_weekly_to_daily_no_weekends(self):
+        ts_data = create_test_data(AllFrequencies.W, 10)
+        ts = TimeSeries(ts_data, "W")
+        expanded_ts = ts.expand("D", "ffill", skip_weekends=True)
+        assert len(expanded_ts) == 45
+        assert expanded_ts.frequency.name == "daily"
+        assert expanded_ts.iloc[0][1] == expanded_ts.iloc[1][1]
+
+    def test_monthly_to_daily(self):
+        ts_data = create_test_data(AllFrequencies.M, 6)
+        ts = TimeSeries(ts_data, "M")
+        expanded_ts = ts.expand("D", "ffill")
+        assert len(expanded_ts) == 152
+        assert expanded_ts.frequency.name == "daily"
+        assert expanded_ts.iloc[0][1] == expanded_ts.iloc[1][1]
+
+    def test_monthly_to_daily_no_weekends(self):
+        ts_data = create_test_data(AllFrequencies.M, 6)
+        ts = TimeSeries(ts_data, "M")
+        expanded_ts = ts.expand("D", "ffill", skip_weekends=True)
+        assert len(expanded_ts) == 109
+        assert expanded_ts.frequency.name == "daily"
+        assert expanded_ts.iloc[0][1] == expanded_ts.iloc[1][1]
+
+    def test_monthly_to_weekly(self):
+        ts_data = create_test_data(AllFrequencies.M, 6)
+        ts = TimeSeries(ts_data, "M")
+        expanded_ts = ts.expand("W", "ffill")
+        assert len(expanded_ts) == 22
+        assert expanded_ts.frequency.name == "weekly"
+        assert expanded_ts.iloc[0][1] == expanded_ts.iloc[1][1]
+
+    def test_yearly_to_monthly(self):
+        ts_data = create_test_data(AllFrequencies.Y, 5)
+        ts = TimeSeries(ts_data, "Y")
+        expanded_ts = ts.expand("M", "ffill")
+        assert len(expanded_ts) == 49
+        assert expanded_ts.frequency.name == "monthly"
+        assert expanded_ts.iloc[0][1] == expanded_ts.iloc[1][1]
+
 
 class TestReturnsAgain:
     data = [
