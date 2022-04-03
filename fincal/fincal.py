@@ -130,7 +130,7 @@ class TimeSeries(TimeSeriesCore):
         res_string: str = "First date: {}\nLast date: {}\nNumber of rows: {}"
         return res_string.format(self.start_date, self.end_date, total_dates)
 
-    def ffill(self, inplace: bool = False, limit: int = None) -> Union[TimeSeries, None]:
+    def ffill(self, inplace: bool = False, limit: int = None, skip_weekends: bool = False) -> Union[TimeSeries, None]:
         """Forward fill missing dates in the time series
 
         Parameters
@@ -141,18 +141,23 @@ class TimeSeries(TimeSeriesCore):
         limit : int, optional
             Maximum number of periods to forward fill
 
+        skip_weekends: bool, optional, default false
+            Skip weekends while forward filling daily data
+
         Returns
         -------
             Returns a TimeSeries object if inplace is False, otherwise None
         """
 
         eomonth: bool = True if self.frequency.days >= AllFrequencies.M.days else False
-        dates_to_fill = create_date_series(self.start_date, self.end_date, self.frequency.symbol, eomonth)
+        dates_to_fill = create_date_series(
+            self.start_date, self.end_date, self.frequency.symbol, eomonth, skip_weekends=skip_weekends
+        )
 
         new_ts = dict()
         for cur_date in dates_to_fill:
             try:
-                cur_val = self.data[cur_date]
+                cur_val = self.get(cur_date, closest="previous")
             except KeyError:
                 pass
             new_ts.update({cur_date: cur_val})
@@ -163,7 +168,7 @@ class TimeSeries(TimeSeriesCore):
 
         return self.__class__(new_ts, frequency=self.frequency.symbol)
 
-    def bfill(self, inplace: bool = False, limit: int = None) -> Union[TimeSeries, None]:
+    def bfill(self, inplace: bool = False, limit: int = None, skip_weekends: bool = False) -> Union[TimeSeries, None]:
         """Backward fill missing dates in the time series
 
         Parameters
@@ -174,13 +179,18 @@ class TimeSeries(TimeSeriesCore):
         limit : int, optional
             Maximum number of periods to back fill
 
+        skip_weekends: bool, optional, default false
+            Skip weekends while forward filling daily data
+
         Returns
         -------
             Returns a TimeSeries object if inplace is False, otherwise None
         """
 
         eomonth: bool = True if self.frequency.days >= AllFrequencies.M.days else False
-        dates_to_fill = create_date_series(self.start_date, self.end_date, self.frequency.symbol, eomonth)
+        dates_to_fill = create_date_series(
+            self.start_date, self.end_date, self.frequency.symbol, eomonth, skip_weekends=skip_weekends
+        )
         dates_to_fill.append(self.end_date)
 
         bfill_ts = dict()
@@ -574,9 +584,9 @@ class TimeSeries(TimeSeriesCore):
         output_ts: TimeSeries = TimeSeries(new_ts, frequency=to_frequency.symbol)
 
         if method == "ffill":
-            output_ts.ffill(inplace=True)
+            output_ts.ffill(inplace=True, skip_weekends=skip_weekends)
         elif method == "bfill":
-            output_ts.bfill(inplace=True)
+            output_ts.bfill(inplace=True, skip_weekends=skip_weekends)
         else:
             raise NotImplementedError(f"Method {method} not implemented")
 

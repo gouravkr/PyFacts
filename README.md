@@ -32,3 +32,7 @@ Fincal aims to simplify things by allowing you to:
 - [ ] Jensen's Alpha
 - [ ] Beta
 - [x] Max drawdown
+
+### Pending implementation
+- [ ] Use limit parameter in ffill and bfill
+- [ ] Implementation of ffill and bfill may be incorrect inside expand, check and correct
