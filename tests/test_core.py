@@ -112,6 +112,10 @@ class TestTimeSeriesCore:
         assert isinstance(ts, TimeSeriesCore)
         assert isinstance(ts, Mapping)
 
+
+class TestSlicing:
+    data = [("2021-01-01", 220), ("2021-02-01", 230), ("2021-03-01", 240)]
+
     def test_getitem(self):
         ts = TimeSeriesCore(self.data, frequency="M")
         assert ts.dates[0] == datetime.datetime(2021, 1, 1, 0, 0)
@@ -164,6 +168,15 @@ class TestTimeSeriesCore:
         assert len(values) == 3
         assert dates[0] == datetime.datetime(2021, 1, 1, 0, 0)
         assert values[0] == 220
+
+    def test_iloc_slicing(self):
+        ts = TimeSeriesCore(self.data, frequency="M")
+        assert ts.iloc[0] == (datetime.datetime(2021, 1, 1), 220)
+        assert ts.iloc[-1] == (datetime.datetime(2021, 3, 1), 240)
+
+        ts_slice = ts.iloc[0:2]
+        assert isinstance(ts_slice, TimeSeriesCore)
+        assert len(ts_slice) == 2
 
 
 class TestTimeSeriesCoreHeadTail:
