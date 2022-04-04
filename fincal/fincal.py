@@ -31,7 +31,8 @@ def create_date_series(
     frequency: Literal["D", "W", "M", "Q", "H", "Y"],
     eomonth: bool = False,
     skip_weekends: bool = False,
-) -> List[datetime.datetime]:
+    ensure_coverage: bool = False,
+) -> Series:
     """Create a date series with a specified frequency
 
     Parameters
@@ -52,6 +53,13 @@ def create_date_series(
         Speacifies if the dates in the series should be end of month dates.
         Can only be used if the frequency is Monthly or lower.
 
+    skip_weekends: Boolean, default False
+        If set to True, dates falling on weekends will not be added to the series.
+        Used only when frequency is daily, weekends will necessarily be included for other frequencies.
+
+    ensure_coverage: Boolean, default False
+        If set to true, it will ensure the last date is greater than the end date.
+
     Returns
     -------
     List[datetime.datetime]
@@ -66,6 +74,13 @@ def create_date_series(
     frequency = getattr(AllFrequencies, frequency)
     if eomonth and frequency.days < AllFrequencies.M.days:
         raise ValueError(f"eomonth cannot be set to True if frequency is higher than {AllFrequencies.M.name}")
+
+    if ensure_coverage:
+        if frequency.days == 1 and skip_weekends and end_date.weekday() > 4:
+            extend_by_days = 7 - end_date.weekday()
+            end_date += relativedelta(days=extend_by_days)
+
+        # To-do: Add code to ensure coverage for other frequencies as well
 
     datediff = (end_date - start_date).days / frequency.days + 1
     dates = []
@@ -160,7 +175,7 @@ class TimeSeries(TimeSeriesCore):
                 cur_val = self.get(cur_date, closest="previous")
             except KeyError:
                 pass
-            new_ts.update({cur_date: cur_val})
+            new_ts.update({cur_date: cur_val[1]})
 
         if inplace:
             self.data = new_ts
@@ -566,7 +581,7 @@ class TimeSeries(TimeSeriesCore):
     def expand(
         self,
         to_frequency: Literal["D", "W", "M", "Q", "H"],
-        method: Literal["ffill", "bfill", "interpolate"],
+        method: Literal["ffill", "bfill"],
         skip_weekends: bool = False,
     ) -> TimeSeries:
         try:
@@ -578,17 +593,16 @@ class TimeSeries(TimeSeriesCore):
             raise ValueError("TimeSeries can be only expanded to a higher frequency")
 
         new_dates = create_date_series(
-            self.start_date, self.end_date, frequency=to_frequency.symbol, skip_weekends=skip_weekends
+            self.start_date,
+            self.end_date,
+            frequency=to_frequency.symbol,
+            skip_weekends=skip_weekends,
+            ensure_coverage=True,
         )
-        new_ts: dict = {dt: self.get(dt, closest="previous")[1] for dt in new_dates}
-        output_ts: TimeSeries = TimeSeries(new_ts, frequency=to_frequency.symbol)
 
-        if method == "ffill":
-            output_ts.ffill(inplace=True, skip_weekends=skip_weekends)
-        elif method == "bfill":
-            output_ts.bfill(inplace=True, skip_weekends=skip_weekends)
-        else:
-            raise NotImplementedError(f"Method {method} not implemented")
+        closest = "previous" if method == "ffill" else "next"
+        new_ts: dict = {dt: self.get(dt, closest=closest)[1] for dt in new_dates}
+        output_ts: TimeSeries = TimeSeries(new_ts, frequency=to_frequency.symbol)
 
         return output_ts
 
