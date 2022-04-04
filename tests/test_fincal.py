@@ -221,7 +221,7 @@ class TestTimeSeriesBasics:
         assert bfill_data is None
         assert len(ts) == 68
 
-        data = [("2021-01-01", 220), ("2021-01-02", 230), ("2021-03-04", 240)]
+        data = [("2021-01-01", 220), ("2021-01-02", 230), ("2021-01-04", 240)]
         ts = TimeSeries(data, frequency="D")
         ff = ts.ffill()
         assert ff["2021-01-03"][1] == 230
@@ -316,7 +316,7 @@ class TestExpand:
         ts_data = create_test_data(AllFrequencies.W, 10)
         ts = TimeSeries(ts_data, "W")
         expanded_ts = ts.expand("D", "ffill", skip_weekends=True)
-        assert len(expanded_ts) == 45
+        assert len(expanded_ts) == 46
         assert expanded_ts.frequency.name == "daily"
         assert expanded_ts.iloc[0][1] == expanded_ts.iloc[1][1]
 
