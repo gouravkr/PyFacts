@@ -319,8 +319,7 @@ class TimeSeries(TimeSeriesCore):
     def calculate_rolling_returns(
         self,
         from_date: datetime.date | str,
-        to_date: datetime.date,
-        str,
+        to_date: datetime.date | str,
         frequency: Literal["D", "W", "M", "Q", "H", "Y"] = None,
         as_on_match: str = "closest",
         prior_match: str = "closest",
@@ -606,6 +605,26 @@ class TimeSeries(TimeSeriesCore):
         output_ts: TimeSeries = TimeSeries(new_ts, frequency=to_frequency.symbol)
 
         return output_ts
+
+    def sync(self, other: TimeSeries, fill_method: Literal["ffill", "bfill"] = "ffill"):
+        """Synchronize two TimeSeries objects
+
+        This will ensure that both time series have the same frequency and same set of dates.
+        The frequency will be set to the higher of the two objects.
+        Dates will be taken from the class on which the method is called.
+        """
+
+        if not isinstance(other, TimeSeries):
+            raise TypeError("Only objects of type TimeSeries can be passed for sync")
+
+        if self.frequency.days > other.frequency.days:
+            other = other.expand(to_frequency=self.frequency.symbol, method=fill_method)
+        if self.frequency.days < other.frequency.days:
+            self = self.expand(to_frequency=other.frequency.symbol, method=fill_method)
+
+        for dt, val in self.data.items():
+            if dt not in other:
+                pass  # Need to create setitem first before implementing this
 
 
 def _preprocess_csv(file_path: str | pathlib.Path, delimiter: str = ",", encoding: str = "utf-8") -> List[list]:

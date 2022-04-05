@@ -237,7 +237,7 @@ class TimeSeriesCore(UserDict):
 
         data = _preprocess_timeseries(data, date_format=date_format)
 
-        self.data = dict(data)
+        super().__init__(dict(data))
         if len(self.data) != len(data):
             print("Warning: The input data contains duplicate dates which have been ignored.")
         self.frequency: Frequency = getattr(AllFrequencies, frequency)
@@ -363,6 +363,9 @@ class TimeSeriesCore(UserDict):
             return self._get_item_from_list(key)
 
         raise TypeError(f"Invalid type {repr(type(key).__name__)} for slicing.")
+
+    # def __setitem__(self, key, value):
+    #     pass
 
     def __iter__(self):
         self.n = 0

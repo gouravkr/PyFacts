@@ -1,6 +1,6 @@
 import datetime
 from dataclasses import dataclass
-from typing import Iterable, List, Literal, Mapping, Sequence, Tuple
+from typing import List, Literal, Mapping, Sequence, Tuple
 
 from .exceptions import DateNotFoundError, DateOutOfRangeError
 
@@ -32,7 +32,7 @@ def _parse_date(date: str, date_format: str = None):
 
 
 def _preprocess_timeseries(
-    data: Sequence[Iterable[str | datetime.datetime, float]]
+    data: Sequence[Tuple[str | datetime.datetime, float]]
     | Sequence[Mapping[str | datetime.datetime, float]]
     | Mapping[str | datetime.datetime, float],
     date_format: str,
