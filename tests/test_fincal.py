@@ -229,6 +229,23 @@ class TestTimeSeriesBasics:
         bf = ts.bfill()
         assert bf["2021-01-03"][1] == 240
 
+    def test_fill_weekly(self):
+        ts_data = create_test_data(frequency=AllFrequencies.W, num=10)
+        ts_data.pop(2)
+        ts_data.pop(6)
+        ts = TimeSeries(ts_data, frequency="W")
+        assert len(ts) == 8
+
+        ff = ts.ffill()
+        assert len(ff) == 10
+        assert "2017-01-15" in ff
+        assert ff["2017-01-15"][1] == ff["2017-01-08"][1]
+
+        bf = ts.bfill()
+        assert len(ff) == 10
+        assert "2017-01-15" in bf
+        assert bf["2017-01-15"][1] == bf["2017-01-22"][1]
+
 
 class TestReturns:
     def test_returns_calc(self):
