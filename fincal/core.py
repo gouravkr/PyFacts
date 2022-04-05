@@ -5,7 +5,7 @@ import inspect
 from collections import UserDict, UserList
 from dataclasses import dataclass
 from numbers import Number
-from typing import Iterable, List, Literal, Mapping, Sequence, Union
+from typing import Callable, Iterable, List, Literal, Mapping, Sequence, Type
 
 from .utils import FincalOptions, _parse_date, _preprocess_timeseries
 
@@ -42,15 +42,15 @@ def date_parser(*pos):
 
     def parse_dates(func):
         def wrapper_func(*args, **kwargs):
-            date_format = kwargs.get("date_format", None)
-            args = list(args)
-            sig = inspect.signature(func)
-            params = [i[0] for i in sig.parameters.items()]
+            date_format: str = kwargs.get("date_format", None)
+            args: list = list(args)
+            sig: inspect.Signature = inspect.signature(func)
+            params: list = [i[0] for i in sig.parameters.items()]
 
             for j in pos:
-                kwarg = params[j]
+                kwarg: str = params[j]
                 date = kwargs.get(kwarg, None)
-                in_args = False
+                in_args: bool = False
                 if date is None:
                     try:
                         date = args[j]
@@ -61,7 +61,7 @@ def date_parser(*pos):
                 if date is None:
                     continue
 
-                parsed_date = _parse_date(date, date_format)
+                parsed_date: datetime.datetime = _parse_date(date, date_format)
                 if not in_args:
                     kwargs[kwarg] = parsed_date
                 else:
@@ -90,9 +90,9 @@ class _IndexSlicer:
 
     def __getitem__(self, n):
         if isinstance(n, int):
-            keys = [self.parent.dates[n]]
+            keys: list = [self.parent.dates[n]]
         else:
-            keys = self.parent.dates[n]
+            keys: list = self.parent.dates[n]
         item = [(key, self.parent.data[key]) for key in keys]
         if len(item) == 1:
             return item[0]
@@ -105,11 +105,11 @@ class Series(UserList):
 
     def __init__(
         self,
-        data,
+        data: Sequence,
         data_type: Literal["date", "number", "bool"],
         date_format: str = None,
     ):
-        types_dict = {
+        types_dict: dict = {
             "date": datetime.datetime,
             "datetime": datetime.datetime,
             "datetime.datetime": datetime.datetime,
@@ -128,11 +128,11 @@ class Series(UserList):
         if data_type in ["date", "datetime", "datetime.datetime"]:
             data = [_parse_date(i, date_format) for i in data]
         else:
-            func = types_dict[data_type]
-            data = [func(i) for i in data]
+            func: Callable = types_dict[data_type]
+            data: list = [func(i) for i in data]
 
-        self.dtype = types_dict[data_type]
-        self.data = data
+        self.dtype: Type = types_dict[data_type]
+        self.data: Sequence = data
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.data}, data_type='{self.dtype.__name__}')"
@@ -212,25 +212,27 @@ class TimeSeriesCore(UserDict):
     """Defines the core building blocks of a TimeSeries object"""
 
     def __init__(
-        self, data: List[Iterable], frequency: Literal["D", "W", "M", "Q", "H", "Y"], date_format: str = "%Y-%m-%d"
+        self,
+        data: List[Iterable] | Mapping,
+        frequency: Literal["D", "W", "M", "Q", "H", "Y"],
+        date_format: str = "%Y-%m-%d",
     ):
         """Instantiate a TimeSeriesCore object
 
         Parameters
         ----------
-        data : List[tuple]
-            Time Series data in the form of list of tuples.
+        data : List[Iterable] | Mapping
+            Time Series data in the form of list of tuples or dictionary.
             The first element of each tuple should be a date and second element should be a value.
+            In case of dictionary, the key should be the date.
+
+        frequency : str
+            The frequency of the time series.
+            Valid values are {D, W, M, Q, H, Y}
 
         date_format : str, optional, default "%Y-%m-%d"
             Specify the format of the date
             Required only if the first argument of tuples is a string. Otherwise ignored.
-
-        frequency : str, optional, default "infer"
-            The frequency of the time series. Default is infer.
-            The class will try to infer the frequency automatically and adjust to the closest member.
-            Note that inferring frequencies can fail if the data is too irregular.
-            Valid values are {D, W, M, Q, H, Y}
         """
 
         data = _preprocess_timeseries(data, date_format=date_format)
@@ -322,10 +324,10 @@ class TimeSeriesCore(UserDict):
         return printable_str
 
     @date_parser(1)
-    def _get_item_from_date(self, date: Union[str, datetime.datetime]):
+    def _get_item_from_date(self, date: str | datetime.datetime):
         return date, self.data[date]
 
-    def _get_item_from_key(self, key: Union[str, datetime.datetime]):
+    def _get_item_from_key(self, key: str | datetime.datetime):
         if isinstance(key, int):
             raise KeyError(f"{key}. \nHint: use .iloc[{key}] for index based slicing.")
 
@@ -334,7 +336,7 @@ class TimeSeriesCore(UserDict):
 
         return self._get_item_from_date(key)
 
-    def _get_item_from_list(self, date_list: Sequence[Union[str, datetime.datetime]]):
+    def _get_item_from_list(self, date_list: Sequence[str | datetime.datetime]):
         data_to_return = [self._get_item_from_key(key) for key in date_list]
         return self.__class__(data_to_return, frequency=self.frequency.symbol)
 
@@ -379,7 +381,7 @@ class TimeSeriesCore(UserDict):
         return super().__contains__(key)
 
     @date_parser(1)
-    def get(self, date: Union[str, datetime.datetime], default=None, closest=None):
+    def get(self, date: str | datetime.datetime, default=None, closest=None):
 
         if closest is None:
             closest = FincalOptions.get_closest

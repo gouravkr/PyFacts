@@ -5,7 +5,7 @@ import datetime
 import math
 import pathlib
 import statistics
-from typing import Iterable, List, Literal, Mapping, Tuple, TypedDict, Union
+from typing import Iterable, List, Literal, Mapping, Tuple, TypedDict
 
 from dateutil.relativedelta import relativedelta
 
@@ -26,8 +26,8 @@ class MaxDrawdown(TypedDict):
 
 @date_parser(0, 1)
 def create_date_series(
-    start_date: Union[str, datetime.datetime],
-    end_date: Union[str, datetime.datetime],
+    start_date: str | datetime.datetime,
+    end_date: str | datetime.datetime,
     frequency: Literal["D", "W", "M", "Q", "H", "Y"],
     eomonth: bool = False,
     skip_weekends: bool = False,
@@ -130,7 +130,7 @@ class TimeSeries(TimeSeriesCore):
 
     def __init__(
         self,
-        data: Union[List[Iterable], Mapping],
+        data: List[Iterable] | Mapping,
         frequency: Literal["D", "W", "M", "Q", "H", "Y"],
         date_format: str = "%Y-%m-%d",
     ):
@@ -145,7 +145,7 @@ class TimeSeries(TimeSeriesCore):
         res_string: str = "First date: {}\nLast date: {}\nNumber of rows: {}"
         return res_string.format(self.start_date, self.end_date, total_dates)
 
-    def ffill(self, inplace: bool = False, limit: int = None, skip_weekends: bool = False) -> Union[TimeSeries, None]:
+    def ffill(self, inplace: bool = False, limit: int = None, skip_weekends: bool = False) -> TimeSeries | None:
         """Forward fill missing dates in the time series
 
         Parameters
@@ -183,7 +183,7 @@ class TimeSeries(TimeSeriesCore):
 
         return self.__class__(new_ts, frequency=self.frequency.symbol)
 
-    def bfill(self, inplace: bool = False, limit: int = None, skip_weekends: bool = False) -> Union[TimeSeries, None]:
+    def bfill(self, inplace: bool = False, limit: int = None, skip_weekends: bool = False) -> TimeSeries | None:
         """Backward fill missing dates in the time series
 
         Parameters
@@ -225,7 +225,7 @@ class TimeSeries(TimeSeriesCore):
     @date_parser(1)
     def calculate_returns(
         self,
-        as_on: Union[str, datetime.datetime],
+        as_on: str | datetime.datetime,
         return_actual_date: bool = True,
         as_on_match: str = "closest",
         prior_match: str = "closest",
@@ -318,8 +318,9 @@ class TimeSeries(TimeSeriesCore):
     @date_parser(1, 2)
     def calculate_rolling_returns(
         self,
-        from_date: Union[datetime.date, str],
-        to_date: Union[datetime.date, str],
+        from_date: datetime.date | str,
+        to_date: datetime.date,
+        str,
         frequency: Literal["D", "W", "M", "Q", "H", "Y"] = None,
         as_on_match: str = "closest",
         prior_match: str = "closest",
@@ -427,8 +428,8 @@ class TimeSeries(TimeSeriesCore):
     @date_parser(1, 2)
     def volatility(
         self,
-        from_date: Union[datetime.date, str] = None,
-        to_date: Union[datetime.date, str] = None,
+        from_date: datetime.date | str = None,
+        to_date: datetime.date | str = None,
         annualize_volatility: bool = True,
         traded_days: int = None,
         frequency: Literal["D", "W", "M", "Q", "H", "Y"] = None,
@@ -600,7 +601,7 @@ class TimeSeries(TimeSeriesCore):
             ensure_coverage=True,
         )
 
-        closest = "previous" if method == "ffill" else "next"
+        closest: str = "previous" if method == "ffill" else "next"
         new_ts: dict = {dt: self.get(dt, closest=closest)[1] for dt in new_dates}
         output_ts: TimeSeries = TimeSeries(new_ts, frequency=to_frequency.symbol)
 
@@ -617,8 +618,8 @@ def _preprocess_csv(file_path: str | pathlib.Path, delimiter: str = ",", encodin
         raise ValueError("File not found. Check the file path")
 
     with open(file_path, "r", encoding=encoding) as file:
-        reader = csv.reader(file, delimiter=delimiter)
-        csv_data = list(reader)
+        reader: csv.reader = csv.reader(file, delimiter=delimiter)
+        csv_data: list = list(reader)
 
     csv_data = [i for i in csv_data if i]  # remove blank rows
     if not csv_data:

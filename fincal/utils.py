@@ -1,6 +1,6 @@
 import datetime
 from dataclasses import dataclass
-from typing import Iterable, List, Literal, Mapping, Sequence, Tuple, Union
+from typing import Iterable, List, Literal, Mapping, Sequence, Tuple
 
 from .exceptions import DateNotFoundError, DateOutOfRangeError
 
@@ -32,18 +32,15 @@ def _parse_date(date: str, date_format: str = None):
 
 
 def _preprocess_timeseries(
-    data: Union[
-        Sequence[Iterable[Union[str, datetime.datetime, float]]],
-        Sequence[Mapping[str, Union[float, datetime.datetime]]],
-        Sequence[Mapping[Union[str, datetime.datetime], float]],
-        Mapping[Union[str, datetime.datetime], float],
-    ],
+    data: Sequence[Iterable[str | datetime.datetime, float]]
+    | Sequence[Mapping[str | datetime.datetime, float]]
+    | Mapping[str | datetime.datetime, float],
     date_format: str,
 ) -> List[Tuple[datetime.datetime, float]]:
     """Converts any type of list to the correct type"""
 
     if isinstance(data, Mapping):
-        current_data = [(k, v) for k, v in data.items()]
+        current_data: List[tuple] = [(k, v) for k, v in data.items()]
         return _preprocess_timeseries(current_data, date_format)
 
     if not isinstance(data, Sequence):
@@ -56,31 +53,31 @@ def _preprocess_timeseries(
         raise TypeError("Could not parse the data")
 
     if len(data[0]) == 1:
-        current_data = [tuple(*i.items()) for i in data]
+        current_data: List[tuple] = [tuple(*i.items()) for i in data]
     elif len(data[0]) == 2:
-        current_data = [tuple(i.values()) for i in data]
+        current_data: List[tuple] = [tuple(i.values()) for i in data]
     else:
         raise TypeError("Could not parse the data")
     return _preprocess_timeseries(current_data, date_format)
 
 
-def _preprocess_match_options(as_on_match: str, prior_match: str, closest: str) -> datetime.timedelta:
+def _preprocess_match_options(as_on_match: str, prior_match: str, closest: str) -> Tuple[datetime.timedelta]:
     """Checks the arguments and returns appropriate timedelta objects"""
 
     deltas = {"exact": 0, "previous": -1, "next": 1}
     if closest not in deltas.keys():
         raise ValueError(f"Invalid argument for closest: {closest}")
 
-    as_on_match = closest if as_on_match == "closest" else as_on_match
-    prior_match = closest if prior_match == "closest" else prior_match
+    as_on_match: str = closest if as_on_match == "closest" else as_on_match
+    prior_match: str = closest if prior_match == "closest" else prior_match
 
     if as_on_match in deltas.keys():
-        as_on_delta = datetime.timedelta(days=deltas[as_on_match])
+        as_on_delta: datetime.timedelta = datetime.timedelta(days=deltas[as_on_match])
     else:
         raise ValueError(f"Invalid as_on_match argument: {as_on_match}")
 
     if prior_match in deltas.keys():
-        prior_delta = datetime.timedelta(days=deltas[prior_match])
+        prior_delta: datetime.timedelta = datetime.timedelta(days=deltas[prior_match])
     else:
         raise ValueError(f"Invalid prior_match argument: {prior_match}")
 
@@ -101,7 +98,7 @@ def _find_closest_date(
     if delta.days > 0 and date > max(data):
         raise DateOutOfRangeError(date, "max")
 
-    row = data.get(date, None)
+    row: tuple = data.get(date, None)
     if row is not None:
         return date, row
 
@@ -119,6 +116,6 @@ def _find_closest_date(
 def _interval_to_years(interval_type: Literal["years", "months", "day"], interval_value: int) -> float:
     """Converts any time period to years for use with compounding functions"""
 
-    year_conversion_factor = {"years": 1, "months": 12, "days": 365}
-    years = interval_value / year_conversion_factor[interval_type]
+    year_conversion_factor: dict = {"years": 1, "months": 12, "days": 365}
+    years: float = interval_value / year_conversion_factor[interval_type]
     return years
