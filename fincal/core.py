@@ -213,7 +213,7 @@ class TimeSeriesCore(UserDict):
 
     def __init__(
         self,
-        data: List[Iterable] | Mapping,
+        ts_data: List[Iterable] | Mapping,
         frequency: Literal["D", "W", "M", "Q", "H", "Y"],
         date_format: str = "%Y-%m-%d",
     ):
@@ -221,7 +221,7 @@ class TimeSeriesCore(UserDict):
 
         Parameters
         ----------
-        data : List[Iterable] | Mapping
+        ts_data : List[Iterable] | Mapping
             Time Series data in the form of list of tuples or dictionary.
             The first element of each tuple should be a date and second element should be a value.
             In case of dictionary, the key should be the date.
@@ -235,10 +235,10 @@ class TimeSeriesCore(UserDict):
             Required only if the first argument of tuples is a string. Otherwise ignored.
         """
 
-        data = _preprocess_timeseries(data, date_format=date_format)
+        ts_data = _preprocess_timeseries(ts_data, date_format=date_format)
 
-        super().__init__(dict(data))
-        if len(self.data) != len(data):
+        super().__init__(dict(ts_data))
+        if len(self.data) != len(ts_data):
             print("Warning: The input data contains duplicate dates which have been ignored.")
         self.frequency: Frequency = getattr(AllFrequencies, frequency)
         self.iter_num: int = -1
@@ -363,9 +363,6 @@ class TimeSeriesCore(UserDict):
             return self._get_item_from_list(key)
 
         raise TypeError(f"Invalid type {repr(type(key).__name__)} for slicing.")
-
-    # def __setitem__(self, key, value):
-    #     pass
 
     def __iter__(self):
         self.n = 0

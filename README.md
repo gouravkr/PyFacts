@@ -26,7 +26,7 @@ Fincal aims to simplify things by allowing you to:
 - [ ] Convert to dict
 - [ ] Convert to list of dicts
 ### Fincal features
-- [ ] Sync two TimeSeries
+- [x] Sync two TimeSeries
 - [x] Average rolling return
 - [ ] Sharpe ratio
 - [ ] Jensen's Alpha
@@ -35,4 +35,5 @@ Fincal aims to simplify things by allowing you to:
 
 ### Pending implementation
 - [ ] Use limit parameter in ffill and bfill
-- [ ] Implementation of ffill and bfill may be incorrect inside expand, check and correct
+- [x] Implementation of ffill and bfill may be incorrect inside expand, check and correct
+- [ ] Implement interpolation in expand

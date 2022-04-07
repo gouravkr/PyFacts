@@ -617,14 +617,20 @@ class TimeSeries(TimeSeriesCore):
         if not isinstance(other, TimeSeries):
             raise TypeError("Only objects of type TimeSeries can be passed for sync")
 
-        if self.frequency.days > other.frequency.days:
-            other = other.expand(to_frequency=self.frequency.symbol, method=fill_method)
         if self.frequency.days < other.frequency.days:
+            other = other.expand(to_frequency=self.frequency.symbol, method=fill_method)
+        if self.frequency.days > other.frequency.days:
             self = self.expand(to_frequency=other.frequency.symbol, method=fill_method)
 
-        for dt, val in self.data.items():
-            if dt not in other:
-                pass  # Need to create setitem first before implementing this
+        new_other = {}
+        for dt in self.dates:
+            closest = "previous" if fill_method == "ffill" else "next"
+            if dt in other:
+                new_other[dt] = other[dt][1]
+            else:
+                new_other[dt] = other.get(dt, closest=closest)[1]
+
+        return self.__class__(new_other, frequency=other.frequency.symbol)
 
 
 def _preprocess_csv(file_path: str | pathlib.Path, delimiter: str = ",", encoding: str = "utf-8") -> List[list]:
