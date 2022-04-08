@@ -13,9 +13,29 @@ class FincalOptions:
     get_closest: str = "exact"
 
 
-def _parse_date(date: str, date_format: str = None):
-    """Parses date and handles errors"""
-    # print(date, date_format)
+def _parse_date(date: str, date_format: str = None) -> datetime.datetime:
+    """Parses date and handles errors
+
+    Parameters:
+    -----------
+    date: str | datetime.date
+        The date to be parsed.
+        If the date passed is already a datetime object, it will return it unprocessed.
+
+    date_format: str, default None
+        The format of the date string in datetime.strftime friendly format.
+        If format is None, format in FincalOptions.date_format will be used.
+
+    Returns:
+    --------
+        Returns a datetime.datetime object.
+
+    Raises:
+    -------
+        TypeError: If the is not a date-like string
+        ValueError: If the date could not be parsed with the given format
+    """
+
     if isinstance(date, (datetime.datetime, datetime.date)):
         return datetime.datetime.fromordinal(date.toordinal())
 
@@ -37,18 +57,53 @@ def _preprocess_timeseries(
     | Mapping[str | datetime.datetime, float],
     date_format: str,
 ) -> List[Tuple[datetime.datetime, float]]:
-    """Converts any type of list to the correct type"""
+    """Converts any type of list to the TimeSeries friendly format.
+        This function is internally called by the __init__ function of the TimeSeriesCore class
+
+        The TimeSeries class can internally process a list of Tuples.
+        However, users have the option of passing a variety of types.
+        This function preprocesses the data and converts it into the relevant format.
+
+        If the data is a dictionary, it will be converted using .items() iteration.
+        If the data is not a dictionary or a list, it will raise an error.
+        If the data is of list type:
+            * If the first item is also of list type, it will be parsed as a list of lists
+            * If the first item is a dictionary with one key, then key will be parsed as date
+            * If the first item is a dictionary with two keys, then first key will be date and second will be value
+            * If the first element is of another type, it will raise an error
+
+        The final return value is sorted by date
+
+    Parameters:
+    -----------
+    Data:
+        The data for the time series. Can be a dictionary, a list of tuples, or a list of dictionaries.
+
+    date_format: str
+        The format of the date in strftime friendly format.
+
+    Returns:
+    -----------
+        Returns a list of Tuples where the first element of each tuple is of datetime.datetime class
+        and the second element is of float class
+
+    Raises:
+    --------
+    TypeError: If the data is not in a format which can be parsed.
+    """
 
     if isinstance(data, Mapping):
         current_data: List[tuple] = [(k, v) for k, v in data.items()]
         return _preprocess_timeseries(current_data, date_format)
 
+    # If data is not a dictionary or list, it cannot be parsed
     if not isinstance(data, Sequence):
         raise TypeError("Could not parse the data")
 
     if isinstance(data[0], Sequence):
         return sorted([(_parse_date(i, date_format), j) for i, j in data])
 
+    # If first element is not a dictionary or tuple, it cannot be parsed
     if not isinstance(data[0], Mapping):
         raise TypeError("Could not parse the data")
 

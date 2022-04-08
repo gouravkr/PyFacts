@@ -476,7 +476,7 @@ class TimeSeries(TimeSeriesCore):
             ValueError: If frequency string is outside valid values
 
         Also see:
-        --------
+        ---------
             TimeSeries.calculate_rolling_returns()
         """
 
@@ -606,12 +606,28 @@ class TimeSeries(TimeSeriesCore):
 
         return output_ts
 
-    def sync(self, other: TimeSeries, fill_method: Literal["ffill", "bfill"] = "ffill"):
+    def sync(self, other: TimeSeries, fill_method: Literal["ffill", "bfill"] = "ffill") -> TimeSeries:
         """Synchronize two TimeSeries objects
 
         This will ensure that both time series have the same frequency and same set of dates.
         The frequency will be set to the higher of the two objects.
         Dates will be taken from the class on which the method is called.
+
+        Parameters:
+        -----------
+        other: TimeSeries
+            Another object of TimeSeries class whose dates need to be syncronized
+
+        fill_method: ffill | bfill, default ffill
+            Method to use to fill missing values in time series when syncronizing
+
+        Returns:
+        --------
+            Returns another object of TimeSeries class
+
+        Raises:
+        --------
+            Raises TypeError if the other object is not of TimeSeries class
         """
 
         if not isinstance(other, TimeSeries):
@@ -622,9 +638,9 @@ class TimeSeries(TimeSeriesCore):
         if self.frequency.days > other.frequency.days:
             self = self.expand(to_frequency=other.frequency.symbol, method=fill_method)
 
-        new_other = {}
+        new_other: dict = {}
+        closest = "previous" if fill_method == "ffill" else "next"
         for dt in self.dates:
-            closest = "previous" if fill_method == "ffill" else "next"
             if dt in other:
                 new_other[dt] = other[dt][1]
             else:
