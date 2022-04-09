@@ -5,10 +5,14 @@ from typing import List
 
 import pytest
 from dateutil.relativedelta import relativedelta
-from fincal.core import AllFrequencies, Frequency
+from fincal import (
+    AllFrequencies,
+    FincalOptions,
+    Frequency,
+    TimeSeries,
+    create_date_series,
+)
 from fincal.exceptions import DateNotFoundError
-from fincal.fincal import TimeSeries, create_date_series
-from fincal.utils import FincalOptions
 
 
 def create_prices(s0: float, mu: float, sigma: float, num_prices: int) -> list:
@@ -507,3 +511,18 @@ class TestDrawdown:
             "drawdown": -0.2584760499552089,
         }
         assert mdd == expeced_response
+
+
+class TestSync:
+    def test_weekly_to_daily(self):
+        daily_data = create_test_data(AllFrequencies.D, num=15)
+        weekly_data = create_test_data(AllFrequencies.W, num=3)
+
+        daily_ts = TimeSeries(daily_data, frequency="D")
+        weekly_ts = TimeSeries(weekly_data, frequency="W")
+
+        synced_weekly_ts = daily_ts.sync(weekly_ts)
+        assert len(daily_ts) == len(synced_weekly_ts)
+        assert synced_weekly_ts.frequency == AllFrequencies.D
+        assert "2017-01-02" in synced_weekly_ts
+        assert synced_weekly_ts["2017-01-02"][1] == synced_weekly_ts["2017-01-01"][1]
