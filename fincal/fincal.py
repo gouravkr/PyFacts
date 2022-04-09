@@ -583,7 +583,38 @@ class TimeSeries(TimeSeriesCore):
         to_frequency: Literal["D", "W", "M", "Q", "H"],
         method: Literal["ffill", "bfill"],
         skip_weekends: bool = False,
+        eomonth: bool = False,
     ) -> TimeSeries:
+        """Expand a time series to a higher frequency.
+
+        Parameters
+        ----------
+        to_frequency : "D", "W", "M", "Q", "H"
+            Frequency to which the TimeSeries will be expanded.
+            Must be higher than the current frequency of the TimeSeries.
+
+        method : ffill | bfill
+            Method to be used to fill missing values.
+
+        skip_weekends : bool, optional
+            Whether weekends should be skipped while expanding to daily.
+            Will be used only if to_frequency is D
+
+        eomonth: bool, optional
+            Whether dates should be end of month dates when frequency is monthly or lower.
+            Will be used only if to_frequency is M, Q, or H
+
+        Returns
+        -------
+        TimeSeries
+            Returns an object of TimeSeries class
+
+        Raises
+        ------
+        ValueError
+            * If Frequency cannot be recognised
+            * If to_frequency is same or lower than the current frequency
+        """
         try:
             to_frequency: Frequency = getattr(AllFrequencies, to_frequency)
         except AttributeError:
@@ -597,6 +628,67 @@ class TimeSeries(TimeSeriesCore):
             self.end_date,
             frequency=to_frequency.symbol,
             skip_weekends=skip_weekends,
+            eomonth=eomonth,
+            ensure_coverage=True,
+        )
+
+        closest: str = "previous" if method == "ffill" else "next"
+        new_ts: dict = {dt: self.get(dt, closest=closest)[1] for dt in new_dates}
+        output_ts: TimeSeries = TimeSeries(new_ts, frequency=to_frequency.symbol)
+
+        return output_ts
+
+    def shrink(
+        self,
+        to_frequency: Literal["W", "M", "Q", "H", "Y"],
+        method: Literal["ffill", "bfill"],
+        skip_weekends: bool = False,
+        eomonth: bool = False,
+    ) -> TimeSeries:
+        """Shrink a time series to a lower frequency.
+
+        Parameters
+        ----------
+        to_frequency : "W", "M", "Q", "H", "Y"
+            Frequency to which the TimeSeries will be shrunk.
+            Must be lower than the current frequency of the TimeSeries.
+
+        method : ffill | bfill
+            Method to be used to fill missing values.
+
+        skip_weekends : bool, optional
+            Whether weekends should be skipped while shrinking to daily.
+            Will be used only if to_frequency is D
+
+        eomonth: bool, optional
+            Whether dates should be end of month dates when frequency is monthly or lower.
+            Will be used only if to_frequency is M, Q, H, or Y
+
+        Returns
+        -------
+        TimeSeries
+            Returns an object of TimeSeries class
+
+        Raises
+        ------
+        ValueError
+            * If Frequency cannot be recognised
+            * If to_frequency is same or higher than the current frequency
+        """
+        try:
+            to_frequency: Frequency = getattr(AllFrequencies, to_frequency)
+        except AttributeError:
+            raise ValueError(f"Invalid argument for to_frequency {to_frequency}")
+
+        if to_frequency.days <= self.frequency.days:
+            raise ValueError("TimeSeries can be only shrunk to a lower frequency")
+
+        new_dates = create_date_series(
+            self.start_date,
+            self.end_date,
+            frequency=to_frequency.symbol,
+            skip_weekends=skip_weekends,
+            eomonth=eomonth,
             ensure_coverage=True,
         )
 
@@ -636,7 +728,7 @@ class TimeSeries(TimeSeriesCore):
         if self.frequency.days < other.frequency.days:
             other = other.expand(to_frequency=self.frequency.symbol, method=fill_method)
         if self.frequency.days > other.frequency.days:
-            self = self.expand(to_frequency=other.frequency.symbol, method=fill_method)
+            other = other.shrink(to_frequency=other.frequency.symbol, method=fill_method)
 
         new_other: dict = {}
         closest = "previous" if fill_method == "ffill" else "next"
