@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 import inspect
-from collections import UserDict, UserList
+from collections import UserList
 from dataclasses import dataclass
 from numbers import Number
 from typing import Callable, Iterable, List, Literal, Mapping, Sequence, Type
@@ -208,7 +208,7 @@ class Series(UserList):
         return eq
 
 
-class TimeSeriesCore(UserDict):
+class TimeSeriesCore:
     """Defines the core building blocks of a TimeSeries object"""
 
     def __init__(
@@ -237,7 +237,7 @@ class TimeSeriesCore(UserDict):
 
         ts_data = _preprocess_timeseries(ts_data, date_format=date_format)
 
-        super().__init__(dict(ts_data))
+        self.data = dict(ts_data)
         if len(self.data) != len(ts_data):
             print("Warning: The input data contains duplicate dates which have been ignored.")
         self.frequency: Frequency = getattr(AllFrequencies, frequency)
@@ -364,9 +364,9 @@ class TimeSeriesCore(UserDict):
 
         raise TypeError(f"Invalid type {repr(type(key).__name__)} for slicing.")
 
-    def __setitem__(self, key: str | datetime.datetime, item: Number) -> None:
+    def __setitem__(self, key: str | datetime.datetime, value: Number) -> None:
         key = _parse_date(key)
-        super().__setitem__(key, item)
+        self.data.update({key: value})
         self.data = dict(sorted(self.data.items()))
 
     def __iter__(self):
@@ -381,9 +381,12 @@ class TimeSeriesCore(UserDict):
             self.n += 1
             return key, self.data[key]
 
+    def __len__(self):
+        return len(self.data)
+
     @date_parser(1)
     def __contains__(self, key: object) -> bool:
-        return super().__contains__(key)
+        return key in self.data
 
     @date_parser(1)
     def get(self, date: str | datetime.datetime, default=None, closest=None):
