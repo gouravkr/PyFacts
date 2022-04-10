@@ -1,6 +1,6 @@
 import datetime
 import random
-from typing import Literal, Mapping, Sequence
+from typing import Literal, Sequence
 
 import pytest
 from fincal.core import AllFrequencies, Frequency, Series, TimeSeriesCore
@@ -110,7 +110,7 @@ class TestTimeSeriesCore:
     def test_creation(self):
         ts = TimeSeriesCore(self.data, frequency="M")
         assert isinstance(ts, TimeSeriesCore)
-        assert isinstance(ts, Mapping)
+        # assert isinstance(ts, Mapping)
 
 
 class TestSlicing:

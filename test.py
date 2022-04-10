@@ -1,35 +1,29 @@
-# type: ignore
-
-import datetime
-import time
-
-import pandas as pd
-
+# from fincal.core import FincalOptions
 from fincal.fincal import TimeSeries
 
-df = pd.read_csv('test_files/nav_history_daily.csv')
-df = df.sort_values(by=['amfi_code', 'date'])  # type: ignore
-data_list = [(i.date, i.nav) for i in df[df.amfi_code == 118825].itertuples()]
+data = [
+    ("2022-01-01", 10),
+    ("2022-01-02", 12),
+    ("2022-01-03", 14),
+    ("2022-01-04", 16),
+    ("2022-01-06", 18),
+    ("2022-01-07", 20),
+    ("2022-01-09", 22),
+    ("2022-01-10", 24),
+    ("2022-01-11", 26),
+    ("2022-01-13", 28),
+    ("2022-01-14", 30),
+    ("2022-01-15", 32),
+    ("2022-01-16", 34),
+]
+ts = TimeSeries(data, frequency="D")
+print(ts)
 
-start = time.time()
-ts_data = TimeSeries(data_list, frequency='M')
-print(f"Instantiation took {round((time.time() - start)*1000, 2)} ms")
-# ts_data.fill_missing_days()
-start = time.time()
-# ts_data.calculate_returns(as_on=datetime.datetime(2022, 1, 4), closest='next', years=1)
-rr = ts_data.calculate_rolling_returns(datetime.datetime(2015, 1, 1),
-                                       datetime.datetime(2022, 1, 21),
-                                       frequency='M',
-                                       as_on_match='next',
-                                       prior_match='previous',
-                                       closest='previous',
-                                       years=1)
+data = [("2022-01-01", 220), ("2022-01-08", 230), ("2022-01-15", 240)]
+ts2 = TimeSeries(data, frequency="W")
+print(ts2)
 
-# ffill_data = ts_data.bfill()
-print(f"Calculation took {round((time.time() - start)*1000, 2)} ms")
-rr.sort()
-for i in rr[:10]:
+synced_ts = ts.sync(ts2)
+print("---------\n")
+for i in synced_ts:
     print(i)
-# print(ffill_data)
-# print(ts_data)
-# print(repr(ts_data))
