@@ -1,6 +1,6 @@
 import datetime
 import random
-from typing import Literal, Sequence
+from typing import Literal, Mapping, Sequence
 
 import pytest
 from fincal.core import AllFrequencies, Frequency, Series, TimeSeriesCore
@@ -110,7 +110,7 @@ class TestTimeSeriesCore:
     def test_creation(self):
         ts = TimeSeriesCore(self.data, frequency="M")
         assert isinstance(ts, TimeSeriesCore)
-        # assert isinstance(ts, Mapping)
+        assert isinstance(ts, Mapping)
 
 
 class TestSlicing:
@@ -177,6 +177,33 @@ class TestSlicing:
         ts_slice = ts.iloc[0:2]
         assert isinstance(ts_slice, TimeSeriesCore)
         assert len(ts_slice) == 2
+
+
+class TestSetitem:
+    data = [("2021-01-01", 220), ("2021-01-04", 230), ("2021-03-07", 240)]
+
+    def test_setitem(self):
+        ts = TimeSeriesCore(self.data, frequency="D")
+        assert len(ts) == 3
+
+        ts["2021-01-02"] = 225
+        assert len(ts) == 4
+        assert ts["2021-01-02"][1] == 225
+
+        ts["2021-01-02"] = 227.6
+        assert len(ts) == 4
+        assert ts["2021-01-02"][1] == 227.6
+
+    def test_errors(self):
+        ts = TimeSeriesCore(self.data, frequency="D")
+        with pytest.raises(TypeError):
+            ts["2021-01-03"] = "abc"
+
+        with pytest.raises(NotImplementedError):
+            ts.iloc[4] = 4
+
+        with pytest.raises(ValueError):
+            ts["abc"] = 12
 
 
 class TestTimeSeriesCoreHeadTail:
