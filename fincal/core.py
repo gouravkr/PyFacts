@@ -364,6 +364,11 @@ class TimeSeriesCore(UserDict):
 
         raise TypeError(f"Invalid type {repr(type(key).__name__)} for slicing.")
 
+    def __setitem__(self, key: str | datetime.datetime, item: Number) -> None:
+        key = _parse_date(key)
+        super().__setitem__(key, item)
+        self.data = dict(sorted(self.data.items()))
+
     def __iter__(self):
         self.n = 0
         return self
