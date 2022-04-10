@@ -101,7 +101,7 @@ def _preprocess_timeseries(
         raise TypeError("Could not parse the data")
 
     if isinstance(data[0], Sequence):
-        return sorted([(_parse_date(i, date_format), j) for i, j in data])
+        return sorted([(_parse_date(i, date_format), float(j)) for i, j in data])
 
     # If first element is not a dictionary or tuple, it cannot be parsed
     if not isinstance(data[0], Mapping):
