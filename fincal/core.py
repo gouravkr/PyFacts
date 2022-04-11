@@ -166,6 +166,8 @@ class Series(UserList):
         elif (self.dtype != float and isinstance(other, Number)) or not isinstance(other, self.dtype):
             raise Exception(f"Cannot compare type {self.dtype.__name__} to {type(other).__name__}")
 
+        return other
+
     def __gt__(self, other):
         other = self._comparison_validator(other)
 
@@ -203,6 +205,14 @@ class Series(UserList):
 
         if isinstance(other, Series):
             return Series([j == other[i] for i, j in enumerate(self)], "bool")
+
+        return Series([i == other for i in self.data], "bool")
+
+    def __ne__(self, other):
+        other = self._comparison_validator(other)
+
+        if isinstance(other, Series):
+            return Series([j != other[i] for i, j in enumerate(self)], "bool")
 
         return Series([i == other for i in self.data], "bool")
 
@@ -325,9 +335,13 @@ class TimeSeriesCore:
 
     @date_parser(1)
     def _get_item_from_date(self, date: str | datetime.datetime):
+        """Helper function to retrieve item using a date"""
+
         return date, self.data[date]
 
     def _get_item_from_key(self, key: str | datetime.datetime):
+        """Helper function to implement special keys"""
+
         if isinstance(key, int):
             raise KeyError(f"{key}. \nHint: use .iloc[{key}] for index based slicing.")
 
@@ -337,10 +351,17 @@ class TimeSeriesCore:
         return self._get_item_from_date(key)
 
     def _get_item_from_list(self, date_list: Sequence[str | datetime.datetime]):
+        """Helper function to retrieve items using a list"""
+
         data_to_return = [self._get_item_from_key(key) for key in date_list]
         return self.__class__(data_to_return, frequency=self.frequency.symbol)
 
     def _get_item_from_series(self, series: Series):
+        """Helper function to retrieve item using a Series object
+
+        A Series of type bool of equal length to the time series can be used.
+        A Series of dates can be used to filter out a set of dates.
+        """
         if series.dtype == bool:
             if len(series) != len(self.dates):
                 raise ValueError(f"Length of Series: {len(series)} did not match length of object: {len(self.dates)}")
@@ -388,7 +409,7 @@ class TimeSeriesCore:
             )
 
         if isinstance(other, TimeSeriesCore):
-            if self.dates != other.dates:
+            if any(self.dates != other.dates):
                 raise ValueError(
                     "Only objects with same set of dates can be compared.\n"
                     "Hint: use TimeSeries.sync() method to sync dates of two TimeSeries objects."
@@ -468,6 +489,20 @@ class TimeSeriesCore:
 
         if isinstance(other, Series):
             data = {dt: val == other[i] for i, (dt, val) in enumerate(self.data.items())}
+
+        return self.__class__(data, frequency=self.frequency.symbol)
+
+    def __ne__(self, other):
+        self._comparison_validator(other)
+
+        if isinstance(other, Number):
+            data = {k: v != other for k, v in self.data.items()}
+
+        if isinstance(other, TimeSeriesCore):
+            data = {dt: val != other[dt][1] for dt, val in self.data.items()}
+
+        if isinstance(other, Series):
+            data = {dt: val != other[i] for i, (dt, val) in enumerate(self.data.items())}
 
         return self.__class__(data, frequency=self.frequency.symbol)
 
