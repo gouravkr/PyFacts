@@ -525,6 +525,121 @@ class TimeSeriesCore:
     def __contains__(self, key: object) -> bool:
         return key in self.data
 
+    def _arithmatic_validator(self, other):
+        """Validates input data before performing math operatios"""
+
+        if not isinstance(other, (Number, Series, TimeSeriesCore)):
+            raise TypeError(
+                "Cannot perform mathematical operations between "
+                f"'{self.__class__.__name__}' and '{other.__class__.__name__}'"
+            )
+
+        if isinstance(other, TimeSeriesCore):
+            if len(other) != len(self):
+                raise ValueError("Can only perform mathematical operations between objects of same length.")
+            if any(self.dates != other.dates):
+                raise ValueError("Can only perform mathematical operations between objects having same dates.")
+
+        if isinstance(other, Series):
+            if other.dtype != float:
+                raise TypeError(
+                    "Cannot perform mathematical operations with "
+                    f"'{other.__class__.__name__}' of type '{other.dtype}'"
+                )
+            if len(other) != len(self):
+                raise ValueError("Can only perform mathematical operations between objects of same length.")
+
+    def __add__(self, other):
+        self._arithmatic_validator(other)
+
+        if isinstance(other, TimeSeriesCore):
+            other = other.values
+
+        if isinstance(other, Series):
+            data = {dt: val + other[i] for i, (dt, val) in enumerate(self.data.items())}
+        elif isinstance(other, Number):
+            data = {dt: val + other for dt, val in self.data.items()}
+
+        return self.__class__(data, self.frequency.symbol)
+
+    def __sub__(self, other):
+        self._arithmatic_validator(other)
+
+        if isinstance(other, TimeSeriesCore):
+            other = other.values
+
+        if isinstance(other, Series):
+            data = {dt: val - other[i] for i, (dt, val) in enumerate(self.data.items())}
+        elif isinstance(other, Number):
+            data = {dt: val - other for dt, val in self.data.items()}
+
+        return self.__class__(data, self.frequency.symbol)
+
+    def __truediv__(self, other):
+        self._arithmatic_validator(other)
+
+        if isinstance(other, TimeSeriesCore):
+            other = other.values
+
+        if isinstance(other, Series):
+            data = {dt: val / other[i] for i, (dt, val) in enumerate(self.data.items())}
+        elif isinstance(other, Number):
+            data = {dt: val / other for dt, val in self.data.items()}
+
+        return self.__class__(data, self.frequency.symbol)
+
+    def __floordiv__(self, other):
+        self._arithmatic_validator(other)
+
+        if isinstance(other, TimeSeriesCore):
+            other = other.values
+
+        if isinstance(other, Series):
+            data = {dt: val // other[i] for i, (dt, val) in enumerate(self.data.items())}
+        elif isinstance(other, Number):
+            data = {dt: val // other for dt, val in self.data.items()}
+
+        return self.__class__(data, self.frequency.symbol)
+
+    def __mul__(self, other):
+        self._arithmatic_validator(other)
+
+        if isinstance(other, TimeSeriesCore):
+            other = other.values
+
+        if isinstance(other, Series):
+            data = {dt: val * other[i] for i, (dt, val) in enumerate(self.data.items())}
+        elif isinstance(other, Number):
+            data = {dt: val * other for dt, val in self.data.items()}
+
+        return self.__class__(data, self.frequency.symbol)
+
+    def __mod__(self, other):
+        self._arithmatic_validator(other)
+
+        if isinstance(other, TimeSeriesCore):
+            other = other.values
+
+        if isinstance(other, Series):
+            data = {dt: val % other[i] for i, (dt, val) in enumerate(self.data.items())}
+        elif isinstance(other, Number):
+            data = {dt: val % other for dt, val in self.data.items()}
+
+        return self.__class__(data, self.frequency.symbol)
+
+    def __pow__(self, other):
+        self._arithmatic_validator(other)
+
+        if isinstance(other, TimeSeriesCore):
+            other = other.values
+
+        if isinstance(other, Series):
+            data = {dt: val ** other[i] for i, (dt, val) in enumerate(self.data.items())}
+        elif isinstance(other, Number):
+            data = {dt: val**other for dt, val in self.data.items()}
+
+        return self.__class__(data, self.frequency.symbol)
+
     @date_parser(1)
     def get(self, date: str | datetime.datetime, default=None, closest=None):
 
