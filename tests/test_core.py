@@ -244,3 +244,93 @@ class TestTimeSeriesCoreHeadTail:
         assert isinstance(head_tail_ts, TimeSeriesCore)
         assert "2021-07-01" in head_tail_ts
         assert head_tail_ts.iloc[1][1] == 290
+
+
+class TestDelitem:
+    data = [
+        ("2021-01-01", 220),
+        ("2021-02-01", 230),
+        ("2021-03-01", 240),
+        ("2021-04-01", 250),
+    ]
+
+    def test_deletion(self):
+        ts = TimeSeriesCore(self.data, "M")
+        assert len(ts) == 4
+        del ts["2021-03-01"]
+        assert len(ts) == 3
+        assert "2021-03-01" not in ts
+
+        with pytest.raises(KeyError):
+            del ts["2021-03-01"]
+
+
+class TestTimeSeriesComparisons:
+    data1 = [
+        ("2021-01-01", 220),
+        ("2021-02-01", 230),
+        ("2021-03-01", 240),
+        ("2021-04-01", 250),
+    ]
+
+    data2 = [
+        ("2021-01-01", 240),
+        ("2021-02-01", 210),
+        ("2021-03-01", 240),
+        ("2021-04-01", 270),
+    ]
+
+    def test_number_comparison(self):
+        ts1 = TimeSeriesCore(self.data1, "M")
+        assert isinstance(ts1 > 23, TimeSeriesCore)
+        assert (ts1 > 230).values == Series([0.0, 0.0, 1.0, 1.0], "float")
+        assert (ts1 >= 230).values == Series([0.0, 1.0, 1.0, 1.0], "float")
+        assert (ts1 < 240).values == Series([1.0, 1.0, 0.0, 0.0], "float")
+        assert (ts1 <= 240).values == Series([1.0, 1.0, 1.0, 0.0], "float")
+        assert (ts1 == 240).values == Series([0.0, 0.0, 1.0, 0.0], "float")
+        assert (ts1 != 240).values == Series([1.0, 1.0, 0.0, 1.0], "float")
+
+    def test_series_comparison(self):
+        ts1 = TimeSeriesCore(self.data1, "M")
+        ser = Series([240, 210, 240, 270], data_type="int")
+
+        assert (ts1 > ser).values == Series([0.0, 1.0, 0.0, 0.0], "float")
+        assert (ts1 >= ser).values == Series([0.0, 1.0, 1.0, 0.0], "float")
+        assert (ts1 < ser).values == Series([1.0, 0.0, 0.0, 1.0], "float")
+        assert (ts1 <= ser).values == Series([1.0, 0.0, 1.0, 1.0], "float")
+        assert (ts1 == ser).values == Series([0.0, 0.0, 1.0, 0.0], "float")
+        assert (ts1 != ser).values == Series([1.0, 1.0, 0.0, 1.0], "float")
+
+    def test_tsc_comparison(self):
+        ts1 = TimeSeriesCore(self.data1, "M")
+        ts2 = TimeSeriesCore(self.data2, "M")
+
+        assert (ts1 > ts2).values == Series([0.0, 1.0, 0.0, 0.0], "float")
+        assert (ts1 >= ts2).values == Series([0.0, 1.0, 1.0, 0.0], "float")
+        assert (ts1 < ts2).values == Series([1.0, 0.0, 0.0, 1.0], "float")
+        assert (ts1 <= ts2).values == Series([1.0, 0.0, 1.0, 1.0], "float")
+        assert (ts1 == ts2).values == Series([0.0, 0.0, 1.0, 0.0], "float")
+        assert (ts1 != ts2).values == Series([1.0, 1.0, 0.0, 1.0], "float")
+
+    def test_errors(self):
+        ts1 = TimeSeriesCore(self.data1, "M")
+        ts2 = TimeSeriesCore(self.data2, "M")
+        ser = Series([240, 210, 240], data_type="int")
+        ser2 = Series(["2021-01-01", "2021-02-01", "2021-03-01", "2021-04-01"], data_type="date")
+
+        del ts2["2021-04-01"]
+
+        with pytest.raises(TypeError):
+            ts1 == "a"
+
+        with pytest.raises(ValueError):
+            ts1 > ts2
+
+        with pytest.raises(TypeError):
+            ts1 == ser2
+
+        with pytest.raises(ValueError):
+            ts1 <= ser
+
+        with pytest.raises(TypeError):
+            ts2 < [23, 24, 25, 26]
