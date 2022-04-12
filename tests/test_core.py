@@ -86,12 +86,12 @@ class TestAllFrequencies:
 
 class TestSeries:
     def test_creation(self):
-        series = Series([1, 2, 3, 4, 5, 6, 7], data_type="number")
+        series = Series([1, 2, 3, 4, 5, 6, 7], dtype="number")
         assert series.dtype == float
         assert series[2] == 3
 
         dates = create_date_series("2021-01-01", "2021-01-31", frequency="D")
-        series = Series(dates, data_type="date")
+        series = Series(dates, dtype="date")
         assert series.dtype == datetime.datetime
 
 
@@ -292,7 +292,7 @@ class TestTimeSeriesComparisons:
 
     def test_series_comparison(self):
         ts1 = TimeSeriesCore(self.data1, "M")
-        ser = Series([240, 210, 240, 270], data_type="int")
+        ser = Series([240, 210, 240, 270], dtype="int")
 
         assert (ts1 > ser).values == Series([0.0, 1.0, 0.0, 0.0], "float")
         assert (ts1 >= ser).values == Series([0.0, 1.0, 1.0, 0.0], "float")
@@ -315,8 +315,8 @@ class TestTimeSeriesComparisons:
     def test_errors(self):
         ts1 = TimeSeriesCore(self.data1, "M")
         ts2 = TimeSeriesCore(self.data2, "M")
-        ser = Series([240, 210, 240], data_type="int")
-        ser2 = Series(["2021-01-01", "2021-02-01", "2021-03-01", "2021-04-01"], data_type="date")
+        ser = Series([240, 210, 240], dtype="int")
+        ser2 = Series(["2021-01-01", "2021-02-01", "2021-03-01", "2021-04-01"], dtype="date")
 
         del ts2["2021-04-01"]
 
@@ -334,3 +334,28 @@ class TestTimeSeriesComparisons:
 
         with pytest.raises(TypeError):
             ts2 < [23, 24, 25, 26]
+
+
+class TestTimeSeriesArithmatic:
+    data = [
+        ("2021-01-01", 220),
+        ("2021-02-01", 230),
+        ("2021-03-01", 240),
+        ("2021-04-01", 250),
+    ]
+
+    def test_add(self):
+        ts = TimeSeriesCore(self.data, "M")
+        ser = ts.values
+
+        num_add_ts = ts + 40
+        assert num_add_ts["2021-01-01"][1] == 260
+        assert num_add_ts["2021-04-01"][1] == 290
+
+        num_radd_ts = 40 + ts
+        assert num_radd_ts["2021-01-01"][1] == 260
+        assert num_radd_ts["2021-04-01"][1] == 290
+
+        ser_add_ts = ts + ser
+        assert ser_add_ts["2021-01-01"][1] == 440
+        assert ser_add_ts["2021-04-01"][1] == 500
