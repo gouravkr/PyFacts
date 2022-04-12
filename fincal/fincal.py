@@ -99,7 +99,7 @@ def create_date_series(
             elif date.weekday() < 5:
                 dates.append(date)
 
-    return Series(dates, data_type="date")
+    return Series(dates, dtype="date")
 
 
 class TimeSeries(TimeSeriesCore):
