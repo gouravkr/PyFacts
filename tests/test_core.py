@@ -359,3 +359,61 @@ class TestTimeSeriesArithmatic:
         ser_add_ts = ts + ser
         assert ser_add_ts["2021-01-01"][1] == 440
         assert ser_add_ts["2021-04-01"][1] == 500
+
+        ts_add_ts = ts + num_add_ts
+        assert ts_add_ts["2021-01-01"][1] == 480
+        assert ts_add_ts["2021-04-01"][1] == 540
+
+    def test_sub(self):
+        ts = TimeSeriesCore(self.data, "M")
+        ser = Series([20, 30, 40, 50], "number")
+
+        num_sub_ts = ts - 40
+        assert num_sub_ts["2021-01-01"][1] == 180
+        assert num_sub_ts["2021-04-01"][1] == 210
+
+        num_rsub_ts = 240 - ts
+        assert num_rsub_ts["2021-01-01"][1] == 20
+        assert num_rsub_ts["2021-04-01"][1] == -10
+
+        ser_sub_ts = ts - ser
+        assert ser_sub_ts["2021-01-01"][1] == 200
+        assert ser_sub_ts["2021-04-01"][1] == 200
+
+        ts_sub_ts = ts - num_sub_ts
+        assert ts_sub_ts["2021-01-01"][1] == 40
+        assert ts_sub_ts["2021-04-01"][1] == 40
+
+    def test_truediv(self):
+        ts = TimeSeriesCore(self.data, "M")
+        ser = Series([21, 21, 23, 24], "number")
+
+        num_div_ts = ts / 10
+        assert num_div_ts["2021-01-01"][1] == 22
+        assert num_div_ts["2021-04-01"][1] == 25
+
+        num_rdiv_ts = 1000 / ts
+        assert num_rdiv_ts["2021-04-01"][1] == 4
+
+        ser_div_ts = ts / ser
+        assert ser_div_ts["2021-01-01"][1] == 10
+        assert ser_div_ts["2021-04-01"][1] == 10
+
+        ts_div_ts = ts / num_div_ts
+        assert ts_div_ts["2021-01-01"][1] == 10
+        assert ts_div_ts["2021-04-01"][1] == 10
+
+    def test_floordiv(self):
+        ts = TimeSeriesCore(self.data, "M")
+        ser = Series([22, 23, 24, 25], "number")
+
+        num_div_ts = ts // 11
+        assert num_div_ts["2021-02-01"][1] == 20
+        assert num_div_ts["2021-04-01"][1] == 22
+
+        num_rdiv_ts = 1000 // ts
+        assert num_rdiv_ts["2021-01-01"][1] == 4
+
+        ser_div_ts = ts // ser
+        assert ser_div_ts["2021-01-01"][1] == 10
+        assert ser_div_ts["2021-04-01"][1] == 10
