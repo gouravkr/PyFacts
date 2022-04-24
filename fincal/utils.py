@@ -8,7 +8,7 @@ from .exceptions import DateNotFoundError, DateOutOfRangeError
 @dataclass
 class FincalOptions:
     date_format: str = "%Y-%m-%d"
-    closest: str = "before"  # after
+    closest: str = "previous"  # next
     traded_days: int = 365
     get_closest: str = "exact"
 

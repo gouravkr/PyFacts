@@ -386,7 +386,7 @@ class TestTimeSeriesArithmatic:
 
     def test_truediv(self):
         ts = TimeSeriesCore(self.data, "M")
-        ser = Series([21, 21, 23, 24], "number")
+        ser = Series([22, 23, 24, 25], "number")
 
         num_div_ts = ts / 10
         assert num_div_ts["2021-01-01"][1] == 22

@@ -393,7 +393,7 @@ class TimeSeriesCore:
     def _get_item_from_date(self, date: str | datetime.datetime):
         """Helper function to retrieve item using a date"""
 
-        return date, self.data[date]
+        return self.get(date, raise_error=True)
 
     def _get_item_from_key(self, key: str | datetime.datetime):
         """Helper function to implement special keys"""
@@ -447,9 +447,9 @@ class TimeSeriesCore:
             raise TypeError("Only numerical values can be stored in TimeSeries")
 
         if key in self.data:
-            self.data[key] = value
+            self.data[key] = float(value)
         else:
-            self.data.update({key: value})
+            self.data.update({key: float(value)})
             self.data = dict(sorted(self.data.items()))
 
     @date_parser(1)
@@ -765,19 +765,22 @@ class TimeSeriesCore:
         raise NotImplementedError("This operation is not supported.")
 
     @date_parser(1)
-    def get(self, date: str | datetime.datetime, default=None, closest=None):
+    def get(self, date: str | datetime.datetime, default=None, closest=None, raise_error: bool = False):
 
         if closest is None:
             closest = FincalOptions.get_closest
 
         if closest == "exact":
-            try:
-                item = self._get_item_from_date(date)
-                return item
-            except KeyError:
-                return default
+            # try:
+            #     item = self.data[date]
+            #     return date, item
+            # except KeyError:
+            #     if raise_error:
+            #         raise KeyError(date)
 
-        if closest == "previous":
+            #     return default
+            delta = 0
+        elif closest == "previous":
             delta = datetime.timedelta(-1)
         elif closest == "next":
             delta = datetime.timedelta(1)
@@ -786,9 +789,13 @@ class TimeSeriesCore:
 
         while True:
             try:
-                item = self._get_item_from_date(date)
-                return item
+                item = self.data[date]
+                return date, item
             except KeyError:
+                if delta == 0:
+                    if raise_error:
+                        raise KeyError(date)
+                    return default
                 date += delta
 
     @property
