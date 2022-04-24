@@ -19,7 +19,7 @@ Fincal aims to simplify things by allowing you to:
 ## To-do
 
 ### Core features
-- [ ] Add __setitem__
+- [x] Add __setitem__
 - [ ] Create emtpy TimeSeries object
 - [x] Read from CSV
 - [ ] Write to CSV

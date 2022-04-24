@@ -6,7 +6,7 @@ import warnings
 from collections import UserList
 from dataclasses import dataclass
 from numbers import Number
-from typing import Callable, Iterable, List, Literal, Mapping, Sequence, Type
+from typing import Any, Callable, Iterable, List, Literal, Mapping, Sequence, Type
 
 from dateutil.relativedelta import relativedelta
 
@@ -765,38 +765,70 @@ class TimeSeriesCore:
         raise NotImplementedError("This operation is not supported.")
 
     @date_parser(1)
-    def get(self, date: str | datetime.datetime, default=None, closest=None, raise_error: bool = False):
+    def get(
+        self,
+        date: str | datetime.datetime,
+        default: Any = None,
+        closest: Literal["previous", "next"] = None,
+        limit: int = 1000,
+        raise_error: bool = False,
+    ) -> tuple | Any:
+        """Get a value for a particular key. Return a default value on KeyError
+
+        Parameters
+        ----------
+        date:
+            Date for which the value needs to be fetched.
+
+        default: Optional, Default None
+            Default value to be returned in case the date is not found. Default None.
+
+        closest:
+            Look for previous or next value when date is not found.
+            If not specified, the value set in FincalOptions is used
+
+        limit:
+            Maximum number of days to look for the closest available date.
+            If exceeded without finding a date, default value will be returned.
+
+        raise_error : bool, optional
+            Whether to raise an error and ignore the default value.
+            Meant for use with __getitem__.
+
+        Returns
+        -------
+        tuple | Any
+            _description_
+
+        Raises
+        ------
+        ValueError
+            If the argument for closest is not valid.
+
+        KeyError
+            if raise_error is true and date is not found
+        """
 
         if closest is None:
             closest = FincalOptions.get_closest
 
-        if closest == "exact":
-            # try:
-            #     item = self.data[date]
-            #     return date, item
-            # except KeyError:
-            #     if raise_error:
-            #         raise KeyError(date)
+        time_delta_dict = {"exact": 0, "previous": -1, "next": 1}
 
-            #     return default
-            delta = 0
-        elif closest == "previous":
-            delta = datetime.timedelta(-1)
-        elif closest == "next":
-            delta = datetime.timedelta(1)
-        else:
+        if closest not in time_delta_dict:
             raise ValueError(f"Invalid argument from closest {closest!r}")
+        delta = relativedelta(days=time_delta_dict[closest])
 
-        while True:
+        for _ in range(limit):
             try:
-                item = self.data[date]
-                return date, item
+                return date, self.data[date]
             except KeyError:
-                if delta == 0:
-                    if raise_error:
-                        raise KeyError(date)
-                    return default
+                if not delta:
+                    break
                 date += delta
+
+        if raise_error:
+            raise KeyError(date)
+        return default
 
     @property
     def iloc(self) -> Mapping:
