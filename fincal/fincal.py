@@ -170,11 +170,16 @@ class TimeSeries(TimeSeriesCore):
         )
 
         new_ts = dict()
+        counter = 0
         for cur_date in dates_to_fill:
             try:
-                cur_val = self.get(cur_date, closest="previous")
+                new_val = self[cur_date]
+                cur_val = new_val
+                counter = 0
             except KeyError:
-                pass
+                if counter >= limit:
+                    continue
+                counter += 1
             new_ts.update({cur_date: cur_val[1]})
 
         if inplace:
@@ -209,13 +214,19 @@ class TimeSeries(TimeSeriesCore):
         dates_to_fill.append(self.end_date)
 
         bfill_ts = dict()
+        counter = 0
         for cur_date in reversed(dates_to_fill):
             try:
-                cur_val = self.data[cur_date]
+                new_val = self[cur_date]
+                cur_val = new_val
+                counter = 0
             except KeyError:
-                pass
-            bfill_ts.update({cur_date: cur_val})
-        new_ts = {k: bfill_ts[k] for k in reversed(bfill_ts)}
+                if counter >= limit:
+                    continue
+                counter += 1
+            bfill_ts.update({cur_date: cur_val[1]})
+        # new_ts = {k: bfill_ts[k] for k in reversed(bfill_ts)}
+        new_ts = dict(list(reversed(bfill_ts.items())))
         if inplace:
             self.data = new_ts
             return None

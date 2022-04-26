@@ -34,6 +34,6 @@ Fincal aims to simplify things by allowing you to:
 - [x] Max drawdown
 
 ### Pending implementation
-- [ ] Use limit parameter in ffill and bfill
+- [x] Use limit parameter in ffill and bfill
 - [x] Implementation of ffill and bfill may be incorrect inside expand, check and correct
 - [ ] Implement interpolation in expand
