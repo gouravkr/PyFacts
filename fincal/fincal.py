@@ -476,7 +476,7 @@ class TimeSeries(TimeSeriesCore):
             Only used when annualizing volatility for a time series with daily frequency.
             If not provided, will use the value in FincalOptions.traded_days.
 
-        Remaining options are passed on to rolling_return function.
+        Remaining options are passed on to calculate_rolling_returns function.
 
         Returns:
         -------
@@ -715,6 +715,7 @@ class TimeSeries(TimeSeriesCore):
         This will ensure that both time series have the same frequency and same set of dates.
         The frequency will be set to the higher of the two objects.
         Dates will be taken from the class on which the method is called.
+        Values will be taken from the other class.
 
         Parameters:
         -----------
@@ -750,6 +751,11 @@ class TimeSeries(TimeSeriesCore):
                 new_other[dt] = other.get(dt, closest=closest)[1]
 
         return self.__class__(new_other, frequency=other.frequency.symbol)
+
+    def mean(self) -> float:
+        """Calculates the mean value of the time series data"""
+
+        return statistics.mean(self.values)
 
 
 def _preprocess_csv(file_path: str | pathlib.Path, delimiter: str = ",", encoding: str = "utf-8") -> List[list]:
