@@ -449,7 +449,7 @@ class TimeSeries(TimeSeriesCore):
         prior_match: str = "closest",
         closest: Literal["previous", "next", "exact"] = "previous",
         if_not_found: Literal["fail", "nan"] = "fail",
-        annual_compounded_returns: bool = None,
+        annual_compounded_returns: bool = False,
         date_format: str = None,
     ) -> float:
         """Calculates the volatility of the time series.add()
@@ -503,9 +503,6 @@ class TimeSeries(TimeSeriesCore):
             from_date = self.start_date + relativedelta(**{return_period_unit: return_period_value})
         if to_date is None:
             to_date = self.end_date
-
-        if annual_compounded_returns is None:
-            annual_compounded_returns = False if frequency.days <= 366 else True
 
         rolling_returns = self.calculate_rolling_returns(
             from_date=from_date,
