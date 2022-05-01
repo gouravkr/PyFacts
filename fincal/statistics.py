@@ -30,7 +30,6 @@ def sharpe_ratio(
         "from_date": from_date,
         "to_date": to_date,
         "frequency": frequency,
-        "annual_compounded_returns": True,
         "return_period_unit": return_period_unit,
         "return_period_value": return_period_value,
         "as_on_match": as_on_match,
@@ -38,7 +37,7 @@ def sharpe_ratio(
         "closest": closest,
         "date_format": date_format,
     }
-    returns_ts = time_series_data.calculate_rolling_returns(**common_params)
+    returns_ts = time_series_data.calculate_rolling_returns(**common_params, annual_compounded_returns=True)
 
     if risk_free_data is not None:
         risk_free_data = returns_ts.sync(risk_free_data)
