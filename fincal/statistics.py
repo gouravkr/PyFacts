@@ -21,10 +21,10 @@ def sharpe_ratio(
     closest: Literal["previous", "next"] = "previous",
     date_format: str = None,
 ):
-    pass
-
     if risk_free_data is None and risk_free_rate is None:
         raise ValueError("At least one of risk_free_data or risk_free rate is required")
+    elif risk_free_data is not None:
+        risk_free_rate = risk_free_data.mean()
 
     common_params = {
         "from_date": from_date,
@@ -37,18 +37,13 @@ def sharpe_ratio(
         "closest": closest,
         "date_format": date_format,
     }
-    returns_ts = time_series_data.calculate_rolling_returns(**common_params, annual_compounded_returns=True)
+    average_rr = time_series_data.average_rolling_return(**common_params, annual_compounded_returns=True)
 
-    if risk_free_data is not None:
-        risk_free_data = returns_ts.sync(risk_free_data)
-    else:
-        risk_free_data = risk_free_rate
-
-    excess_returns = returns_ts - risk_free_data
+    excess_returns = average_rr - risk_free_rate
     sd = time_series_data.volatility(
         **common_params,
         annualize_volatility=True,
     )
 
-    sharpe_ratio = excess_returns.mean() / sd
-    return sharpe_ratio
+    sharpe_ratio_value = excess_returns / sd
+    return sharpe_ratio_value

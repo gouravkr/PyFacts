@@ -206,6 +206,8 @@ class TestTimeSeriesCreation:
 
 
 class TestTimeSeriesBasics:
+    FincalOptions.get_closest = "exact"
+
     def test_fill(self):
         ts_data = create_test_data(frequency=AllFrequencies.D, num=50, skip_weekends=True)
         ts = TimeSeries(ts_data, frequency="D")

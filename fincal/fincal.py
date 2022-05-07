@@ -449,7 +449,7 @@ class TimeSeries(TimeSeriesCore):
         prior_match: str = "closest",
         closest: Literal["previous", "next", "exact"] = "previous",
         if_not_found: Literal["fail", "nan"] = "fail",
-        annual_compounded_returns: bool = False,
+        annual_compounded_returns: bool = None,
         date_format: str = None,
     ) -> float:
         """Calculates the volatility of the time series.add()
@@ -503,6 +503,12 @@ class TimeSeries(TimeSeriesCore):
             from_date = self.start_date + relativedelta(**{return_period_unit: return_period_value})
         if to_date is None:
             to_date = self.end_date
+        years = _interval_to_years(return_period_unit, return_period_value)
+        if annual_compounded_returns is None:
+            if years > 1:
+                annual_compounded_returns = True
+            else:
+                annual_compounded_returns = False
 
         rolling_returns = self.calculate_rolling_returns(
             from_date=from_date,
@@ -524,7 +530,7 @@ class TimeSeries(TimeSeriesCore):
             if return_period_unit == "months":
                 sd *= math.sqrt(12)
             elif return_period_unit == "days":
-                sd *= math.sqrt(traded_days)
+                sd *= math.sqrt(traded_days / return_period_value)
 
         return sd
 
@@ -544,19 +550,32 @@ class TimeSeries(TimeSeriesCore):
         ---------
         TimeSeries.calculate_rolling_returns()
         """
-
         kwargs["return_period_unit"] = kwargs.get("return_period_unit", self.frequency.freq_type)
         kwargs["return_period_value"] = kwargs.get("return_period_value", 1)
-        kwargs["to_date"] = kwargs.get("to_date", self.end_date)
 
-        if kwargs.get("from_date", None) is None:
-            start_date = self.start_date + relativedelta(
+        years = _interval_to_years(kwargs["return_period_unit"], kwargs["return_period_value"])
+        if kwargs.get("annual_compounded_returns", True):
+            if years >= 1:
+                kwargs["annual_compounded_returns"] = True
+                annualise_returns = False
+            else:
+                kwargs["annual_compounded_returns"] = False
+                annualise_returns = True
+        elif not kwargs["annual_compounded_returns"]:
+            annualise_returns = False
+
+        if kwargs.get("from_date") is None:
+            kwargs["from_date"] = self.start_date + relativedelta(
                 **{kwargs["return_period_unit"]: kwargs["return_period_value"]}
             )
-            kwargs["from_date"] = start_date
+        kwargs["to_date"] = kwargs.get("to_date", self.end_date)
 
         rr = self.calculate_rolling_returns(**kwargs)
-        return statistics.mean(rr.values)
+        mean_rr = statistics.mean(rr.values)
+        if annualise_returns:
+            mean_rr = (1 + mean_rr) ** (1 / years) - 1
+
+        return mean_rr
 
     def max_drawdown(self) -> MaxDrawdown:
         """Calculates the maximum fall the stock has taken between any two points.
