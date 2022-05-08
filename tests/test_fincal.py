@@ -1,10 +1,6 @@
 import datetime
-import math
-import random
-from typing import List
 
 import pytest
-from dateutil.relativedelta import relativedelta
 from fincal import (
     AllFrequencies,
     FincalOptions,
@@ -13,89 +9,6 @@ from fincal import (
     create_date_series,
 )
 from fincal.exceptions import DateNotFoundError
-
-
-def create_prices(s0: float, mu: float, sigma: float, num_prices: int) -> list:
-    """Generates a price following a geometric brownian motion process based on the input of the arguments.
-
-        Since this function is used only to generate data for tests, the seed is fixed as 1234.
-        Many of the tests rely on exact values generated using this seed.
-        If the seed is changed, those tests will fail.
-
-    Parameters:
-    ------------
-    s0: float
-        Asset inital price.
-
-    mu: float
-        Interest rate expressed annual terms.
-
-    sigma: float
-        Volatility expressed annual terms.
-
-    num_prices: int
-        number of prices to generate
-
-    Returns:
-    --------
-        Returns a list of values generated using GBM algorithm
-    """
-
-    random.seed(1234)  # WARNING! Changing the seed will cause most tests to fail
-    all_values = []
-    for _ in range(num_prices):
-        s0 *= math.exp(
-            (mu - 0.5 * sigma**2) * (1.0 / 365.0) + sigma * math.sqrt(1.0 / 365.0) * random.gauss(mu=0, sigma=1)
-        )
-        all_values.append(round(s0, 2))
-
-    return all_values
-
-
-def create_test_data(
-    frequency: Frequency,
-    num: int = 1000,
-    skip_weekends: bool = False,
-    mu: float = 0.1,
-    sigma: float = 0.05,
-    eomonth: bool = False,
-) -> List[tuple]:
-    """Creates TimeSeries data
-
-    Parameters:
-    -----------
-    frequency: Frequency
-        The frequency of the time series data to be generated.
-
-    num: int
-        Number of date: value pairs to be generated.
-
-    skip_weekends: bool
-        Whether weekends (saturday, sunday) should be skipped.
-        Gets used only if the frequency is daily.
-
-    mu: float
-        Mean return for the values.
-
-    sigma: float
-        standard deviation of the values.
-
-    Returns:
-    --------
-        Returns a TimeSeries object
-    """
-
-    start_date = datetime.datetime(2017, 1, 1)
-    timedelta_dict = {
-        frequency.freq_type: int(
-            frequency.value * num * (7 / 5 if frequency == AllFrequencies.D and skip_weekends else 1)
-        )
-    }
-    end_date = start_date + relativedelta(**timedelta_dict)
-    dates = create_date_series(start_date, end_date, frequency.symbol, skip_weekends=skip_weekends, eomonth=eomonth)
-    values = create_prices(1000, mu, sigma, num)
-    ts = list(zip(dates, values))
-    return ts
 
 
 class TestDateSeries:
@@ -161,14 +74,14 @@ class TestDateSeries:
 
 
 class TestTimeSeriesCreation:
-    def test_creation_with_list_of_tuples(self):
+    def test_creation_with_list_of_tuples(self, create_test_data):
         ts_data = create_test_data(frequency=AllFrequencies.D, num=50)
         ts = TimeSeries(ts_data, frequency="D")
         assert len(ts) == 50
         assert isinstance(ts.frequency, Frequency)
         assert ts.frequency.days == 1
 
-    def test_creation_with_string_dates(self):
+    def test_creation_with_string_dates(self, create_test_data):
         ts_data = create_test_data(frequency=AllFrequencies.D, num=50)
         ts_data1 = [(dt.strftime("%Y-%m-%d"), val) for dt, val in ts_data]
         ts = TimeSeries(ts_data1, frequency="D")
@@ -186,19 +99,19 @@ class TestTimeSeriesCreation:
         ts = TimeSeries(ts_data1, frequency="D", date_format="%m-%d-%Y %H:%M")
         datetime.datetime(2017, 1, 1, 0, 0) in ts
 
-    def test_creation_with_list_of_dicts(self):
+    def test_creation_with_list_of_dicts(self, create_test_data):
         ts_data = create_test_data(frequency=AllFrequencies.D, num=50)
         ts_data1 = [{"date": dt.strftime("%Y-%m-%d"), "value": val} for dt, val in ts_data]
         ts = TimeSeries(ts_data1, frequency="D")
         datetime.datetime(2017, 1, 1) in ts
 
-    def test_creation_with_list_of_lists(self):
+    def test_creation_with_list_of_lists(self, create_test_data):
         ts_data = create_test_data(frequency=AllFrequencies.D, num=50)
         ts_data1 = [[dt.strftime("%Y-%m-%d"), val] for dt, val in ts_data]
         ts = TimeSeries(ts_data1, frequency="D")
         datetime.datetime(2017, 1, 1) in ts
 
-    def test_creation_with_dict(self):
+    def test_creation_with_dict(self, create_test_data):
         ts_data = create_test_data(frequency=AllFrequencies.D, num=50)
         ts_data1 = [{dt.strftime("%Y-%m-%d"): val} for dt, val in ts_data]
         ts = TimeSeries(ts_data1, frequency="D")
@@ -206,9 +119,8 @@ class TestTimeSeriesCreation:
 
 
 class TestTimeSeriesBasics:
-    FincalOptions.get_closest = "exact"
-
-    def test_fill(self):
+    def test_fill(self, create_test_data):
+        FincalOptions.get_closest = "exact"
         ts_data = create_test_data(frequency=AllFrequencies.D, num=50, skip_weekends=True)
         ts = TimeSeries(ts_data, frequency="D")
         ffill_data = ts.ffill()
@@ -235,7 +147,7 @@ class TestTimeSeriesBasics:
         bf = ts.bfill()
         assert bf["2021-01-03"][1] == 240
 
-    def test_fill_weekly(self):
+    def test_fill_weekly(self, create_test_data):
         ts_data = create_test_data(frequency=AllFrequencies.W, num=10)
         ts_data.pop(2)
         ts_data.pop(6)
@@ -254,7 +166,7 @@ class TestTimeSeriesBasics:
 
 
 class TestReturns:
-    def test_returns_calc(self):
+    def test_returns_calc(self, create_test_data):
         ts_data = create_test_data(AllFrequencies.D, skip_weekends=True)
         ts = TimeSeries(ts_data, "D")
         returns = ts.calculate_returns(
@@ -287,7 +199,7 @@ class TestReturns:
         with pytest.raises(DateNotFoundError):
             ts.calculate_returns("2020-04-04", return_period_unit="months", return_period_value=3, prior_match="exact")
 
-    def test_date_formats(self):
+    def test_date_formats(self, create_test_data):
         ts_data = create_test_data(AllFrequencies.D, skip_weekends=True)
         ts = TimeSeries(ts_data, "D")
         FincalOptions.date_format = "%d-%m-%Y"
@@ -314,7 +226,7 @@ class TestReturns:
         returns2 = ts.calculate_returns("04-01-2020", return_period_unit="days", return_period_value=90)
         assert round(returns1[1], 6) == round(returns2[1], 6) == 0.073632
 
-    def test_limits(self):
+    def test_limits(self, create_test_data):
         FincalOptions.date_format = "%Y-%m-%d"
         ts_data = create_test_data(AllFrequencies.D)
         ts = TimeSeries(ts_data, "D")
@@ -327,7 +239,7 @@ class TestReturns:
 
 
 class TestExpand:
-    def test_weekly_to_daily(self):
+    def test_weekly_to_daily(self, create_test_data):
         ts_data = create_test_data(AllFrequencies.W, 10)
         ts = TimeSeries(ts_data, "W")
         expanded_ts = ts.expand("D", "ffill")
@@ -335,7 +247,7 @@ class TestExpand:
         assert expanded_ts.frequency.name == "daily"
         assert expanded_ts.iloc[0][1] == expanded_ts.iloc[1][1]
 
-    def test_weekly_to_daily_no_weekends(self):
+    def test_weekly_to_daily_no_weekends(self, create_test_data):
         ts_data = create_test_data(AllFrequencies.W, 10)
         ts = TimeSeries(ts_data, "W")
         expanded_ts = ts.expand("D", "ffill", skip_weekends=True)
@@ -343,7 +255,7 @@ class TestExpand:
         assert expanded_ts.frequency.name == "daily"
         assert expanded_ts.iloc[0][1] == expanded_ts.iloc[1][1]
 
-    def test_monthly_to_daily(self):
+    def test_monthly_to_daily(self, create_test_data):
         ts_data = create_test_data(AllFrequencies.M, 6)
         ts = TimeSeries(ts_data, "M")
         expanded_ts = ts.expand("D", "ffill")
@@ -351,7 +263,7 @@ class TestExpand:
         assert expanded_ts.frequency.name == "daily"
         assert expanded_ts.iloc[0][1] == expanded_ts.iloc[1][1]
 
-    def test_monthly_to_daily_no_weekends(self):
+    def test_monthly_to_daily_no_weekends(self, create_test_data):
         ts_data = create_test_data(AllFrequencies.M, 6)
         ts = TimeSeries(ts_data, "M")
         expanded_ts = ts.expand("D", "ffill", skip_weekends=True)
@@ -359,7 +271,7 @@ class TestExpand:
         assert expanded_ts.frequency.name == "daily"
         assert expanded_ts.iloc[0][1] == expanded_ts.iloc[1][1]
 
-    def test_monthly_to_weekly(self):
+    def test_monthly_to_weekly(self, create_test_data):
         ts_data = create_test_data(AllFrequencies.M, 6)
         ts = TimeSeries(ts_data, "M")
         expanded_ts = ts.expand("W", "ffill")
@@ -367,7 +279,7 @@ class TestExpand:
         assert expanded_ts.frequency.name == "weekly"
         assert expanded_ts.iloc[0][1] == expanded_ts.iloc[1][1]
 
-    def test_yearly_to_monthly(self):
+    def test_yearly_to_monthly(self, create_test_data):
         ts_data = create_test_data(AllFrequencies.Y, 5)
         ts = TimeSeries(ts_data, "Y")
         expanded_ts = ts.expand("M", "ffill")
@@ -458,7 +370,7 @@ class TestReturnsAgain:
 
 
 class TestVolatility:
-    def test_daily_ts(self):
+    def test_daily_ts(self, create_test_data):
         ts_data = create_test_data(AllFrequencies.D)
         ts = TimeSeries(ts_data, "D")
         assert len(ts) == 1000
@@ -486,7 +398,7 @@ class TestVolatility:
 
 
 class TestDrawdown:
-    def test_daily_ts(self):
+    def test_daily_ts(self, create_test_data):
         ts_data = create_test_data(AllFrequencies.D, skip_weekends=True)
         ts = TimeSeries(ts_data, "D")
         mdd = ts.max_drawdown()
@@ -500,7 +412,7 @@ class TestDrawdown:
         }
         assert mdd == expeced_response
 
-    def test_weekly_ts(self):
+    def test_weekly_ts(self, create_test_data):
         ts_data = create_test_data(AllFrequencies.W, mu=1, sigma=0.5)
         ts = TimeSeries(ts_data, "W")
         mdd = ts.max_drawdown()
@@ -516,7 +428,7 @@ class TestDrawdown:
 
 
 class TestSync:
-    def test_weekly_to_daily(self):
+    def test_weekly_to_daily(self, create_test_data):
         daily_data = create_test_data(AllFrequencies.D, num=15)
         weekly_data = create_test_data(AllFrequencies.W, num=3)
 
