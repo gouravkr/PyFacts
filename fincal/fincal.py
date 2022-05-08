@@ -528,7 +528,7 @@ class TimeSeries(TimeSeriesCore):
                 traded_days = FincalOptions.traded_days
 
             if return_period_unit == "months":
-                sd *= math.sqrt(12)
+                sd *= math.sqrt(12 / return_period_value)
             elif return_period_unit == "days":
                 sd *= math.sqrt(traded_days / return_period_value)
 
@@ -805,7 +805,7 @@ def read_csv(
     nrows: int = -1,
     delimiter: str = ",",
     encoding: str = "utf-8",
-) -> TimeSeriesCore:
+) -> TimeSeries:
     """Reads Time Series data directly from a CSV file"""
 
     data = _preprocess_csv(csv_file_path, delimiter, encoding)

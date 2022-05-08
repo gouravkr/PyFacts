@@ -28,9 +28,12 @@ Fincal aims to simplify things by allowing you to:
 ### Fincal features
 - [x] Sync two TimeSeries
 - [x] Average rolling return
-- [ ] Sharpe ratio
+- [x] Sharpe ratio
 - [ ] Jensen's Alpha
 - [ ] Beta
+- [ ] Sortino ratio
+- [ ] Correlation & R-squared
+- [ ] Treynor ratio
 - [x] Max drawdown
 
 ### Pending implementation
