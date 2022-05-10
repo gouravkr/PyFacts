@@ -164,6 +164,40 @@ class TestTimeSeriesBasics:
         assert "2017-01-15" in bf
         assert bf["2017-01-15"][1] == bf["2017-01-22"][1]
 
+    def test_fill_monthly(self, create_test_data):
+        ts_data = create_test_data(frequency=AllFrequencies.M, num=10)
+        ts_data.pop(2)
+        ts_data.pop(6)
+        ts = TimeSeries(ts_data, frequency="M")
+        assert len(ts) == 8
+
+        ff = ts.ffill()
+        assert len(ff) == 10
+        assert "2017-03-01" in ff
+        assert ff["2017-03-01"][1] == ff["2017-02-01"][1]
+
+        bf = ts.bfill()
+        assert len(bf) == 10
+        assert "2017-08-01" in bf
+        assert bf["2017-08-01"][1] == bf["2017-09-01"][1]
+
+    def test_fill_eomonthly(self, create_test_data):
+        ts_data = create_test_data(frequency=AllFrequencies.M, num=10, eomonth=True)
+        ts_data.pop(2)
+        ts_data.pop(6)
+        ts = TimeSeries(ts_data, frequency="M")
+        assert len(ts) == 8
+
+        ff = ts.ffill()
+        assert len(ff) == 10
+        assert "2017-03-31" in ff
+        assert ff["2017-03-31"][1] == ff["2017-02-28"][1]
+
+        bf = ts.bfill()
+        assert len(bf) == 10
+        assert "2017-08-31" in bf
+        assert bf["2017-08-31"][1] == bf["2017-09-30"][1]
+
 
 class TestReturns:
     def test_returns_calc(self, create_test_data):

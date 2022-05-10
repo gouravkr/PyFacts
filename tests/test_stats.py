@@ -7,7 +7,7 @@ def test_conf(conf_fun):
 
 
 class TestSharpe:
-    def test_sharpe_daily(self, create_test_data):
+    def test_sharpe_daily_freq(self, create_test_data):
         data = create_test_data(num=1305, frequency=fc.AllFrequencies.D, skip_weekends=True)
         ts = fc.TimeSeries(data, "D")
         sharpe_ratio = fc.sharpe_ratio(
@@ -49,3 +49,26 @@ class TestSharpe:
             return_period_value=6,
         )
         assert round(sharpe_ratio, 4) == 0.8401
+
+    def test_sharpe_weekly_freq(self, create_test_data):
+        data = create_test_data(num=261, frequency=fc.AllFrequencies.W, mu=0.6, sigma=0.7)
+        ts = fc.TimeSeries(data, "W")
+        sharpe_ratio = fc.sharpe_ratio(
+            ts,
+            risk_free_rate=0.052,
+            from_date="2017-01-08",
+            to_date="2021-12-31",
+            return_period_unit="days",
+            return_period_value=7,
+        )
+        assert round(sharpe_ratio, 4) == 0.4533
+
+        sharpe_ratio = fc.sharpe_ratio(
+            ts,
+            risk_free_rate=0.052,
+            from_date="2017-02-05",
+            to_date="2021-12-31",
+            return_period_unit="months",
+            return_period_value=1,
+        )
+        assert round(sharpe_ratio, 4) == 0.4898

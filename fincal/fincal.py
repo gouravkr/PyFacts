@@ -145,7 +145,9 @@ class TimeSeries(TimeSeriesCore):
         res_string: str = "First date: {}\nLast date: {}\nNumber of rows: {}"
         return res_string.format(self.start_date, self.end_date, total_dates)
 
-    def ffill(self, inplace: bool = False, limit: int = 1000, skip_weekends: bool = False) -> TimeSeries | None:
+    def ffill(
+        self, inplace: bool = False, limit: int = 1000, skip_weekends: bool = False, eomonth: bool = False
+    ) -> TimeSeries | None:
         """Forward fill missing dates in the time series
 
         Parameters
@@ -164,7 +166,6 @@ class TimeSeries(TimeSeriesCore):
             Returns a TimeSeries object if inplace is False, otherwise None
         """
 
-        eomonth: bool = True if self.frequency.days >= AllFrequencies.M.days else False
         dates_to_fill = create_date_series(
             self.start_date, self.end_date, self.frequency.symbol, eomonth, skip_weekends=skip_weekends
         )
@@ -188,7 +189,9 @@ class TimeSeries(TimeSeriesCore):
 
         return self.__class__(new_ts, frequency=self.frequency.symbol)
 
-    def bfill(self, inplace: bool = False, limit: int = 1000, skip_weekends: bool = False) -> TimeSeries | None:
+    def bfill(
+        self, inplace: bool = False, limit: int = 1000, skip_weekends: bool = False, eomonth: bool = False
+    ) -> TimeSeries | None:
         """Backward fill missing dates in the time series
 
         Parameters
@@ -207,7 +210,6 @@ class TimeSeries(TimeSeriesCore):
             Returns a TimeSeries object if inplace is False, otherwise None
         """
 
-        eomonth: bool = True if self.frequency.days >= AllFrequencies.M.days else False
         dates_to_fill = create_date_series(
             self.start_date, self.end_date, self.frequency.symbol, eomonth, skip_weekends=skip_weekends
         )
