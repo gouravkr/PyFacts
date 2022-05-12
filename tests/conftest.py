@@ -56,6 +56,7 @@ def create_prices(s0: float, mu: float, sigma: float, num_prices: int) -> list:
 
 def sample_data_generator(
     frequency: fc.Frequency,
+    start_date: datetime.date = datetime.date(2017, 1, 1),
     num: int = 1000,
     skip_weekends: bool = False,
     mu: float = 0.1,
@@ -87,7 +88,6 @@ def sample_data_generator(
         Returns a TimeSeries object
     """
 
-    start_date = datetime.datetime(2017, 1, 1)
     timedelta_dict = {
         frequency.freq_type: int(
             frequency.value * num * (7 / 5 if frequency == fc.AllFrequencies.D and skip_weekends else 1)

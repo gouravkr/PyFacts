@@ -14,6 +14,7 @@ from .utils import (
     FincalOptions,
     _find_closest_date,
     _interval_to_years,
+    _is_eomonth,
     _preprocess_match_options,
 )
 
@@ -146,7 +147,7 @@ class TimeSeries(TimeSeriesCore):
         return res_string.format(self.start_date, self.end_date, total_dates)
 
     def ffill(
-        self, inplace: bool = False, limit: int = 1000, skip_weekends: bool = False, eomonth: bool = False
+        self, inplace: bool = False, limit: int = 1000, skip_weekends: bool = False, eomonth: bool = None
     ) -> TimeSeries | None:
         """Forward fill missing dates in the time series
 
@@ -165,6 +166,8 @@ class TimeSeries(TimeSeriesCore):
         -------
             Returns a TimeSeries object if inplace is False, otherwise None
         """
+        if eomonth is None:
+            eomonth = _is_eomonth(self.dates)
 
         dates_to_fill = create_date_series(
             self.start_date, self.end_date, self.frequency.symbol, eomonth, skip_weekends=skip_weekends
@@ -190,7 +193,7 @@ class TimeSeries(TimeSeriesCore):
         return self.__class__(new_ts, frequency=self.frequency.symbol)
 
     def bfill(
-        self, inplace: bool = False, limit: int = 1000, skip_weekends: bool = False, eomonth: bool = False
+        self, inplace: bool = False, limit: int = 1000, skip_weekends: bool = False, eomonth: bool = None
     ) -> TimeSeries | None:
         """Backward fill missing dates in the time series
 
@@ -209,6 +212,8 @@ class TimeSeries(TimeSeriesCore):
         -------
             Returns a TimeSeries object if inplace is False, otherwise None
         """
+        if eomonth is None:
+            eomonth = _is_eomonth(self.dates)
 
         dates_to_fill = create_date_series(
             self.start_date, self.end_date, self.frequency.symbol, eomonth, skip_weekends=skip_weekends

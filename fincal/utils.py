@@ -2,6 +2,8 @@ import datetime
 from dataclasses import dataclass
 from typing import List, Literal, Mapping, Sequence, Tuple
 
+from dateutil.relativedelta import relativedelta
+
 from .exceptions import DateNotFoundError, DateOutOfRangeError
 
 
@@ -174,3 +176,14 @@ def _interval_to_years(interval_type: Literal["years", "months", "day"], interva
     year_conversion_factor: dict = {"years": 1, "months": 12, "days": 365}
     years: float = interval_value / year_conversion_factor[interval_type]
     return years
+
+
+def _is_eomonth(dates: Sequence[datetime.datetime], threshold: float = 0.7):
+    """Checks if a series is should be treated as end of month date series or not.
+
+    If eomonth dates exceed threshold percentage, it will be treated as eomonth series.
+    This can be used for any frequency, but will work only for monthly and lower frequencies.
+    """
+    eomonth_dates = [date.month != (date + relativedelta(days=1)).month for date in dates]
+    eomonth_proportion = sum(eomonth_dates) / len(dates)
+    return eomonth_proportion > threshold
