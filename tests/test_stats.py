@@ -72,3 +72,13 @@ class TestSharpe:
             return_period_value=1,
         )
         assert round(sharpe_ratio, 4) == 0.4898
+
+        sharpe_ratio = fc.sharpe_ratio(
+            ts,
+            risk_free_rate=0.052,
+            from_date="2018-01-01",
+            to_date="2021-12-31",
+            return_period_unit="months",
+            return_period_value=12,
+        )
+        assert round(sharpe_ratio, 4) == 0.3199
