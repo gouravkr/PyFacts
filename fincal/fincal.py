@@ -81,7 +81,7 @@ def create_date_series(
             extend_by_days = 7 - end_date.weekday()
             end_date += relativedelta(days=extend_by_days)
 
-        # To-do: Add code to ensure coverage for other frequencies as well
+        # TODO: Add code to ensure coverage for other frequencies as well
 
     datediff = (end_date - start_date).days / frequency.days + 1
     dates = []
@@ -91,8 +91,8 @@ def create_date_series(
         date = start_date + relativedelta(**diff)
 
         if eomonth:
-            next_month = 1 if date.month == 12 else date.month + 1
-            date = date.replace(day=1).replace(month=next_month) - relativedelta(days=1)
+            replacement = {"month": date.month + 1} if date.month < 12 else {"year": date.year + 1}
+            date = date.replace(day=1).replace(**replacement) - relativedelta(days=1)
 
         if date <= end_date:
             if frequency.days > 1 or not skip_weekends:
@@ -727,7 +727,10 @@ class TimeSeries(TimeSeriesCore):
         )
 
         closest: str = "previous" if method == "ffill" else "next"
-        new_ts: dict = {dt: self.get(dt, closest=closest)[1] for dt in new_dates}
+        new_ts = {}
+        for dt in new_dates:
+            new_ts.update({dt: self.get(dt, closest=closest)[1]})
+        # new_ts: dict = {dt: self.get(dt, closest=closest)[1] for dt in new_dates}
         output_ts: TimeSeries = TimeSeries(new_ts, frequency=to_frequency.symbol)
 
         return output_ts

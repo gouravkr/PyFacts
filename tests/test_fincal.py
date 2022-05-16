@@ -340,17 +340,17 @@ class TestExpand:
 
 
 class TestShrink:
-    # To-do
+    # TODO
     pass
 
 
 class TestMeanReturns:
-    # To-do
+    # TODO
     pass
 
 
 class TestReadCsv:
-    # To-do
+    # TODO
     pass
 
 
