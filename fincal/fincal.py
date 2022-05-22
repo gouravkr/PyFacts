@@ -783,6 +783,45 @@ class TimeSeries(TimeSeriesCore):
 
         return statistics.mean(self.values)
 
+    def transform(
+        self, to_frequency: Literal["W", "M", "Q", "H", "Y"], method: Literal["sum", "mean"], eomonth: bool
+    ) -> TimeSeries:
+        """Transform a time series object into a lower frequency object with an aggregation function.
+
+        Parameters
+        ----------
+        to_frequency:
+            Frequency to which the time series needs to be transformed
+
+        method:
+            Aggregation method to be used. Can be either mean or sum
+
+        eomonth:
+            User end of month dates. Only applicable for frequencies monthly and lower.
+
+        Returns
+        -------
+            Returns a TimeSeries object
+
+        Raises
+        -------
+            ValueError:
+                * If invalid input is passed for frequency
+                * if invalid input is passed for method
+                * If to_frequency is higher than the current frequency
+        """
+
+        try:
+            to_frequency: Frequency = getattr(AllFrequencies, to_frequency)
+        except AttributeError:
+            raise ValueError(f"Invalid argument for to_frequency {to_frequency}")
+
+        if to_frequency.days <= self.frequency.days:
+            raise ValueError("TimeSeries can be only shrunk to a lower frequency")
+
+        if method not in ["sum", "mean"]:
+            raise ValueError(f"Method not recognised: {method}")
+
 
 def _preprocess_csv(file_path: str | pathlib.Path, delimiter: str = ",", encoding: str = "utf-8") -> List[list]:
     """Preprocess csv data"""
