@@ -221,7 +221,23 @@ class Series(UserList):
         if isinstance(other, Series):
             return Series([j != other[i] for i, j in enumerate(self)], "bool")
 
-        return Series([i == other for i in self.data], "bool")
+        return Series([i != other for i in self.data], "bool")
+
+    def __and__(self, other):
+        other = self._comparison_validator(other)
+
+        if isinstance(other, Series):
+            return Series([j and other[i] for i, j in enumerate(self)], "bool")
+
+        return Series([i and other for i in self.data], "bool")
+
+    def __or__(self, other):
+        other = self._comparison_validator(other)
+
+        if isinstance(other, Series):
+            return Series([j or other[i] for i, j in enumerate(self)], "bool")
+
+        return Series([i or other for i in self.data], "bool")
 
     def _math_validator(self, other):
 
