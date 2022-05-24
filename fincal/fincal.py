@@ -784,7 +784,7 @@ class TimeSeries(TimeSeriesCore):
         return statistics.mean(self.values)
 
     def transform(
-        self, to_frequency: Literal["W", "M", "Q", "H", "Y"], method: Literal["sum", "mean"], eomonth: bool
+        self, to_frequency: Literal["W", "M", "Q", "H", "Y"], method: Literal["sum", "mean"], eomonth: bool = False
     ) -> TimeSeries:
         """Transform a time series object into a lower frequency object with an aggregation function.
 
@@ -821,6 +821,28 @@ class TimeSeries(TimeSeriesCore):
 
         if method not in ["sum", "mean"]:
             raise ValueError(f"Method not recognised: {method}")
+
+        dates = create_date_series(
+            self.start_date,
+            self.end_date
+            + datetime.timedelta(to_frequency.days),  # need extra date at the end for calculation of last value
+            to_frequency.symbol,
+            ensure_coverage=True,
+        )
+        prev_date = dates[0]
+
+        new_ts_dict = {}
+        for date in dates[1:]:
+            cur_data = self[(self.dates >= prev_date) & (self.dates < date)]
+            if method == "sum":
+                value = sum(cur_data.values)
+            elif method == "mean":
+                value = cur_data.mean()
+
+            new_ts_dict.update({prev_date: value})
+            prev_date = date
+
+        return self.__class__(new_ts_dict, to_frequency.symbol)
 
 
 def _preprocess_csv(file_path: str | pathlib.Path, delimiter: str = ",", encoding: str = "utf-8") -> List[list]:
