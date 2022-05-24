@@ -354,6 +354,40 @@ class TestReadCsv:
     pass
 
 
+class TestTransform:
+    def test_daily_to_yearly(self, create_test_data):
+        ts_data = create_test_data(AllFrequencies.D, num=782, skip_weekends=True)
+        ts = TimeSeries(ts_data, "D")
+        tst = ts.transform("Y", "mean")
+        assert isinstance(tst, TimeSeries)
+        assert len(tst) == 3
+        assert "2019-01-02" in tst
+        assert tst.iloc[2] == (datetime.datetime(2019, 1, 2), 1238.5195)
+
+    def test_weekly_to_monthly(self, create_test_data):
+        ts_data = create_test_data(AllFrequencies.W, num=261)
+        ts = TimeSeries(ts_data, "W")
+        tst = ts.transform("M", "mean")
+        assert isinstance(tst, TimeSeries)
+        assert "2017-01-01" in tst
+        assert tst.iloc[0] == (datetime.datetime(2017, 1, 1), 1007.33)
+
+    def test_weekly_to_qty(self, create_test_data):
+        ts_data = create_test_data(AllFrequencies.W, num=261)
+        ts = TimeSeries(ts_data, "W")
+        tst = ts.transform("Q", "mean")
+        assert len(tst) == 20
+        assert "2018-01-01" in tst
+        assert round(tst.iloc[4][1], 2) == 1054.72
+
+    def test_weekly_to_yearly(self, create_test_data):
+        ts_data = create_test_data(AllFrequencies.W, num=261)
+        ts = TimeSeries(ts_data, "W")
+        tst = ts.transform("Y", "mean")
+        assert "2019-01-01" in tst
+        assert round(tst.iloc[2][1], 2) == 1054.50
+
+
 class TestReturnsAgain:
     data = [
         ("2020-01-01", 10),
