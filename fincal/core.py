@@ -7,6 +7,7 @@ from collections import UserList
 from dataclasses import dataclass
 from numbers import Number
 from typing import Any, Callable, Iterable, List, Literal, Mapping, Sequence, Type
+from unittest import skip
 
 from dateutil.relativedelta import relativedelta
 
@@ -156,14 +157,14 @@ class Series(UserList):
         else:
             return self.data[i]
 
-    def _comparison_validator(self, other):
+    def _comparison_validator(self, other, skip_bool: bool = False):
         """Validates other before making comparison"""
 
         if isinstance(other, (str, datetime.datetime, datetime.date)):
             other = _parse_date(other)
             return other
 
-        if self.dtype == bool:
+        if self.dtype == bool and not skip_bool:
             raise TypeError("Comparison operation not supported for boolean series")
 
         elif isinstance(other, Series):
@@ -224,7 +225,7 @@ class Series(UserList):
         return Series([i != other for i in self.data], "bool")
 
     def __and__(self, other):
-        other = self._comparison_validator(other)
+        other = self._comparison_validator(other, skip_bool=True)
 
         if isinstance(other, Series):
             return Series([j and other[i] for i, j in enumerate(self)], "bool")
@@ -232,7 +233,7 @@ class Series(UserList):
         return Series([i and other for i in self.data], "bool")
 
     def __or__(self, other):
-        other = self._comparison_validator(other)
+        other = self._comparison_validator(other, skip_bool=True)
 
         if isinstance(other, Series):
             return Series([j or other[i] for i, j in enumerate(self)], "bool")
