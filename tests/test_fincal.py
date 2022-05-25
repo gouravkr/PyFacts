@@ -355,6 +355,24 @@ class TestReadCsv:
 
 
 class TestTransform:
+    def test_daily_to_weekly(self, create_test_data):
+        ts_data = create_test_data(AllFrequencies.D, num=782, skip_weekends=True)
+        ts = TimeSeries(ts_data, "D")
+        tst = ts.transform("W", "mean")
+        assert isinstance(tst, TimeSeries)
+        assert len(tst) == 157
+        assert "2017-01-30" in tst
+        assert tst.iloc[4] == (datetime.datetime(2017, 1, 30), 1021.19)
+
+    def test_daily_to_monthly(self, create_test_data):
+        ts_data = create_test_data(AllFrequencies.D, num=782, skip_weekends=False)
+        ts = TimeSeries(ts_data, "D")
+        tst = ts.transform("M", "mean")
+        assert isinstance(tst, TimeSeries)
+        assert len(tst) == 26
+        assert "2018-01-01" in tst
+        assert round(tst.iloc[12][1], 2) == 1146.1
+
     def test_daily_to_yearly(self, create_test_data):
         ts_data = create_test_data(AllFrequencies.D, num=782, skip_weekends=True)
         ts = TimeSeries(ts_data, "D")
@@ -386,6 +404,18 @@ class TestTransform:
         tst = ts.transform("Y", "mean")
         assert "2019-01-01" in tst
         assert round(tst.iloc[2][1], 2) == 1054.50
+        with pytest.raises(ValueError):
+            ts.transform("D", "mean")
+
+    def test_monthly_to_qty(self, create_test_data):
+        ts_data = create_test_data(AllFrequencies.M, num=36)
+        ts = TimeSeries(ts_data, "M")
+        tst = ts.transform("Q", "mean")
+        assert len(tst) == 12
+        assert "2018-10-01" in tst
+        assert tst.iloc[7] == (datetime.datetime(2018, 10, 1), 1021.19)
+        with pytest.raises(ValueError):
+            ts.transform("M", "sum")
 
 
 class TestReturnsAgain:
