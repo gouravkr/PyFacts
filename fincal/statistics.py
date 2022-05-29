@@ -1,9 +1,11 @@
 import datetime
+import statistics
 from typing import Literal
 
 from fincal.core import date_parser
 
 from .fincal import TimeSeries
+from .utils import _interval_to_years
 
 
 @date_parser(3, 4)
@@ -21,6 +23,13 @@ def sharpe_ratio(
     closest: Literal["previous", "next"] = "previous",
     date_format: str = None,
 ):
+    interval_days = int(_interval_to_years(return_period_unit, return_period_value) * 365 + 1)
+
+    if from_date is None:
+        from_date = time_series_data.start_date + datetime.timedelta(days=interval_days)
+    if to_date is None:
+        to_date = time_series_data.end_date
+
     if risk_free_data is None and risk_free_rate is None:
         raise ValueError("At least one of risk_free_data or risk_free rate is required")
     elif risk_free_data is not None:
@@ -47,3 +56,47 @@ def sharpe_ratio(
 
     sharpe_ratio_value = excess_returns / sd
     return sharpe_ratio_value
+
+
+@date_parser(2, 3)
+def beta(
+    asset_data: TimeSeries,
+    market_data: TimeSeries,
+    from_date: str | datetime.datetime = None,
+    to_date: str | datetime.datetime = None,
+    frequency: Literal["D", "W", "M", "Q", "H", "Y"] = None,
+    return_period_unit: Literal["years", "months", "days"] = "years",
+    return_period_value: int = 1,
+    as_on_match: str = "closest",
+    prior_match: str = "closest",
+    closest: Literal["previous", "next"] = "previous",
+    date_format: str = None,
+):
+
+    interval_days = int(_interval_to_years(return_period_unit, return_period_value) * 365 + 1)
+
+    if from_date is None:
+        from_date = asset_data.start_date + datetime.timedelta(days=interval_days)
+    if to_date is None:
+        to_date = asset_data.end_date
+
+    common_params = {
+        "from_date": from_date,
+        "to_date": to_date,
+        "frequency": frequency,
+        "return_period_unit": return_period_unit,
+        "return_period_value": return_period_value,
+        "as_on_match": as_on_match,
+        "prior_match": prior_match,
+        "closest": closest,
+        "date_format": date_format,
+    }
+
+    asset_rr = asset_data.calculate_rolling_returns(**common_params)
+    market_rr = market_data.calculate_rolling_returns(**common_params)
+
+    cov = statistics.covariance(asset_rr.values, market_rr.values)
+    market_var = statistics.variance(market_rr.values)
+
+    beta = cov / market_var
+    return beta
