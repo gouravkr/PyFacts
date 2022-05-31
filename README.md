@@ -35,6 +35,7 @@ Fincal aims to simplify things by allowing you to:
 - [ ] Correlation & R-squared
 - [ ] Treynor ratio
 - [x] Max drawdown
+- [ ] Moving average
 
 ### Pending implementation
 - [x] Use limit parameter in ffill and bfill

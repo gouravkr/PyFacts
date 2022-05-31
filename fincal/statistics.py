@@ -23,6 +23,45 @@ def sharpe_ratio(
     closest: Literal["previous", "next"] = "previous",
     date_format: str = None,
 ):
+    """Calculate the Sharpe ratio of any time series
+
+
+
+    Parameters
+    ----------
+    time_series_data :
+
+    risk_free_data :
+
+    risk_free_rate :
+
+    from_date :
+
+    to_date :
+
+    frequency :
+
+    return_period_unit :
+
+    return_period_value :
+
+    as_on_match :
+
+    prior_match :
+
+    closest :
+
+    date_format :
+
+    Returns
+    -------
+        _description_
+
+    Raises
+    ------
+    ValueError
+        _description_
+    """
     interval_days = int(_interval_to_years(return_period_unit, return_period_value) * 365 + 1)
 
     if from_date is None:
@@ -72,8 +111,10 @@ def beta(
     closest: Literal["previous", "next"] = "previous",
     date_format: str = None,
 ):
+    interval_years = _interval_to_years(return_period_unit, return_period_value)
+    interval_days = int(interval_years * 365 + 1)
 
-    interval_days = int(_interval_to_years(return_period_unit, return_period_value) * 365 + 1)
+    annual_compounded_returns = True if interval_years > 1 else False
 
     if from_date is None:
         from_date = asset_data.start_date + datetime.timedelta(days=interval_days)
@@ -90,6 +131,7 @@ def beta(
         "prior_match": prior_match,
         "closest": closest,
         "date_format": date_format,
+        "annual_compounded_returns": annual_compounded_returns,
     }
 
     asset_rr = asset_data.calculate_rolling_returns(**common_params)
