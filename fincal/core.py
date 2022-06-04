@@ -882,3 +882,49 @@ class TimeSeriesCore:
     def update(self, items: dict):
         for k, v in items.items():
             self[k] = v
+
+    def to_dict(self, date_as_string: bool = False, string_date_format: str = "default") -> dict:
+        """Convert time series to a dictionary
+
+        Parameters
+        ----------
+        date_as_string: boolean, default False
+            Whether date should be converted to string.
+            If False, then the output will contain datetime.datetime objects
+
+        string_date_format: datetime library compatible format string
+            If date is to be output as string, pass the format here.
+            If it is left as default, the format set in fincal_options will be used.
+        """
+
+        if not date_as_string:
+            return self.data
+
+        if string_date_format == "default":
+            string_date_format = FincalOptions.date_format
+
+        data = {datetime.datetime.strftime(dt, string_date_format): val for dt, val in self.data.items()}
+        return data
+
+    def to_list(self, date_as_string: bool = False, string_date_format: str = "default") -> List[tuple]:
+        """Convert time series to a list of tuples
+
+        Parameters
+        ----------
+        date_as_string: boolean, optional
+            Whether date should be converted to string.
+            If False, then the output will contain datetime.datetime objects
+
+        string_date_format : str, optional
+            If date is to be output as string, pass the format here.
+            If it is left as default, the format set in fincal_options will be used.
+        """
+
+        if not date_as_string:
+            return list(self.data.items())
+
+        if string_date_format == "default":
+            string_date_format = FincalOptions.date_format
+
+        data = [(datetime.datetime.strftime(dt, string_date_format), val) for dt, val in self.data.items()]
+        return data
