@@ -240,7 +240,61 @@ def jensens_alpha(
         Rf = The risk free rate during the return time frame
         B = Beta of the portfolio or investment
         Rm = Realized return of the market index
+
+    Parameters
+    ----------
+    asset_data : TimeSeries
+        The time series data of the asset
+
+    market_data : TimeSeries
+        The time series data of the relevant market index
+
+    risk_free_data:
+        Risk free rates as time series data.
+        This should be the time series of risk free returns,
+        and not the underlying asset value.
+
+    risk_free_rate:
+        Risk free rate to be used.
+        Either risk_free_data or risk_free_rate needs to be provided.
+        If both are provided, the time series data will be used.
+
+    from_date:
+        Start date from which returns should be calculated.
+        Defaults to the first date of the series.
+
+    to_date:
+        End date till which returns should be calculated.
+        Defaults to the last date of the series.
+
+    frequency:
+        The frequency at which returns should be calculated.
+
+    return_period_unit : 'years', 'months', 'days'
+        The type of time period to use for return calculation.
+
+    return_period_value : int
+        The value of the specified interval type over which returns needs to be calculated.
+
+    as_on_match : str, optional
+            The mode of matching the as_on_date. Refer closest.
+
+    prior_match : str, optional
+        The mode of matching the prior_date. Refer closest.
+
+    closest : str, optional
+        The mode of matching the closest date.
+        Valid values are 'exact', 'previous', 'next' and next.
+
+    The date format to use for this operation.
+            Should be passed as a datetime library compatible string.
+            Sets the date format only for this operation. To set it globally, use FincalOptions.date_format
+
+    Returns
+    -------
+        The value of Jensen's alpha as a float.
     """
+
     interval_years = _interval_to_years(return_period_unit, return_period_value)
     interval_days = int(interval_years * 365 + 1)
 
