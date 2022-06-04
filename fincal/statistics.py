@@ -22,11 +22,14 @@ def sharpe_ratio(
     prior_match: str = "closest",
     closest: Literal["previous", "next"] = "previous",
     date_format: str = None,
-):
+) -> float:
     """Calculate the Sharpe ratio of any time series
 
     Sharpe ratio is a measure of returns per unit of risk,
     where risk is measured by the standard deviation of the returns.
+
+    The formula for Sharpe ratio is:
+        (average asset return - risk free rate)/volatility of asset returns
 
     Parameters
     ----------
@@ -60,23 +63,30 @@ def sharpe_ratio(
     return_period_value : int
         The value of the specified interval type over which returns needs to be calculated.
 
-    as_on_match:
+    as_on_match : str, optional
+            The mode of matching the as_on_date. Refer closest.
 
-    prior_match :
+    prior_match : str, optional
+        The mode of matching the prior_date. Refer closest.
 
-    closest :
+    closest : str, optional
+        The mode of matching the closest date.
+        Valid values are 'exact', 'previous', 'next' and next.
 
-    date_format :
+    The date format to use for this operation.
+            Should be passed as a datetime library compatible string.
+            Sets the date format only for this operation. To set it globally, use FincalOptions.date_format
 
     Returns
     -------
-        _description_
+        Value of Sharpe ratio as a float.
 
     Raises
     ------
     ValueError
-        _description_
+        If risk free data or risk free rate is not provided.
     """
+
     interval_days = int(_interval_to_years(return_period_unit, return_period_value) * 365 + 1)
 
     if from_date is None:
@@ -125,7 +135,54 @@ def beta(
     prior_match: str = "closest",
     closest: Literal["previous", "next"] = "previous",
     date_format: str = None,
-):
+) -> float:
+    """Beta is a measure of sensitivity of asset returns to market returns
+
+    The formula for beta is:
+
+    Parameters
+    ----------
+    asset_data : TimeSeries
+        The time series data of the asset
+
+    market_data : TimeSeries
+        The time series data of the relevant market index
+
+    from_date:
+        Start date from which returns should be calculated.
+        Defaults to the first date of the series.
+
+    to_date:
+        End date till which returns should be calculated.
+        Defaults to the last date of the series.
+
+    frequency:
+        The frequency at which returns should be calculated.
+
+    return_period_unit : 'years', 'months', 'days'
+        The type of time period to use for return calculation.
+
+    return_period_value : int
+        The value of the specified interval type over which returns needs to be calculated.
+
+    as_on_match : str, optional
+            The mode of matching the as_on_date. Refer closest.
+
+    prior_match : str, optional
+        The mode of matching the prior_date. Refer closest.
+
+    closest : str, optional
+        The mode of matching the closest date.
+        Valid values are 'exact', 'previous', 'next' and next.
+
+    The date format to use for this operation.
+            Should be passed as a datetime library compatible string.
+            Sets the date format only for this operation. To set it globally, use FincalOptions.date_format
+
+    Returns
+    -------
+        The value of beta as a float.
+    """
     interval_years = _interval_to_years(return_period_unit, return_period_value)
     interval_days = int(interval_years * 365 + 1)
 
@@ -157,3 +214,81 @@ def beta(
 
     beta = cov / market_var
     return beta
+
+
+def jensens_alpha(
+    asset_data: TimeSeries,
+    market_data: TimeSeries,
+    risk_free_data: TimeSeries = None,
+    risk_free_rate: float = None,
+    from_date: str | datetime.datetime = None,
+    to_date: str | datetime.datetime = None,
+    frequency: Literal["D", "W", "M", "Q", "H", "Y"] = None,
+    return_period_unit: Literal["years", "months", "days"] = "years",
+    return_period_value: int = 1,
+    as_on_match: str = "closest",
+    prior_match: str = "closest",
+    closest: Literal["previous", "next"] = "previous",
+    date_format: str = None,
+) -> float:
+    """
+    This function calculates the Jensen's alpha for a time series.
+    The formula for Jensen's alpha is:
+        Ri - Rf + B x (Rm - Rf)
+    where:
+        Ri = Realized return of the portfolio or investment
+        Rf = The risk free rate during the return time frame
+        B = Beta of the portfolio or investment
+        Rm = Realized return of the market index
+    """
+    interval_years = _interval_to_years(return_period_unit, return_period_value)
+    interval_days = int(interval_years * 365 + 1)
+
+    if from_date is None:
+        from_date = asset_data.start_date + datetime.timedelta(days=interval_days)
+    if to_date is None:
+        to_date = asset_data.end_date
+
+    common_params = {
+        "from_date": from_date,
+        "to_date": to_date,
+        "frequency": frequency,
+        "return_period_unit": return_period_unit,
+        "return_period_value": return_period_value,
+        "as_on_match": as_on_match,
+        "prior_match": prior_match,
+        "closest": closest,
+        "date_format": date_format,
+    }
+
+    num_days = (to_date - from_date).days
+    compound_realised_returns = True if num_days > 365 else False
+    realized_return = asset_data.calculate_returns(
+        as_on=to_date,
+        return_period_unit="days",
+        return_period_value=num_days,
+        annual_compounded_returns=compound_realised_returns,
+        as_on_match=as_on_match,
+        prior_match=prior_match,
+        closest=closest,
+        date_format=date_format,
+    )
+    market_return = market_data.calculate_returns(
+        as_on=to_date,
+        return_period_unit="days",
+        return_period_value=num_days,
+        annual_compounded_returns=compound_realised_returns,
+        as_on_match=as_on_match,
+        prior_match=prior_match,
+        closest=closest,
+        date_format=date_format,
+    )
+    beta_value = beta(asset_data=asset_data, market_data=market_data, **common_params)
+
+    if risk_free_data is None and risk_free_rate is None:
+        raise ValueError("At least one of risk_free_data or risk_free rate is required")
+    elif risk_free_data is not None:
+        risk_free_rate = risk_free_data.mean()
+
+    jensens_alpha = realized_return[1] - risk_free_rate + beta_value * (market_return[1] - risk_free_rate)
+    return jensens_alpha
