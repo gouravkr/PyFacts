@@ -25,27 +25,42 @@ def sharpe_ratio(
 ):
     """Calculate the Sharpe ratio of any time series
 
-
+    Sharpe ratio is a measure of returns per unit of risk,
+    where risk is measured by the standard deviation of the returns.
 
     Parameters
     ----------
-    time_series_data :
+    time_series_data:
+        The time series for which Sharpe ratio needs to be calculated
 
-    risk_free_data :
+    risk_free_data:
+        Risk free rates as time series data.
+        This should be the time series of risk free returns,
+        and not the underlying asset value.
 
-    risk_free_rate :
+    risk_free_rate:
+        Risk free rate to be used.
+        Either risk_free_data or risk_free_rate needs to be provided.
+        If both are provided, the time series data will be used.
 
-    from_date :
+    from_date:
+        Start date from which returns should be calculated.
+        Defaults to the first date of the series.
 
-    to_date :
+    to_date:
+        End date till which returns should be calculated.
+        Defaults to the last date of the series.
 
-    frequency :
+    frequency:
+        The frequency at which returns should be calculated.
 
-    return_period_unit :
+    return_period_unit : 'years', 'months', 'days'
+        The type of time period to use for return calculation.
 
-    return_period_value :
+    return_period_value : int
+        The value of the specified interval type over which returns needs to be calculated.
 
-    as_on_match :
+    as_on_match:
 
     prior_match :
 
