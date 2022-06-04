@@ -57,19 +57,19 @@ def sharpe_ratio(
     frequency:
         The frequency at which returns should be calculated.
 
-    return_period_unit : 'years', 'months', 'days'
+    return_period_unit: 'years', 'months', 'days'
         The type of time period to use for return calculation.
 
-    return_period_value : int
+    return_period_value: int
         The value of the specified interval type over which returns needs to be calculated.
 
-    as_on_match : str, optional
+    as_on_match: str, optional
             The mode of matching the as_on_date. Refer closest.
 
-    prior_match : str, optional
+    prior_match: str, optional
         The mode of matching the prior_date. Refer closest.
 
-    closest : str, optional
+    closest: str, optional
         The mode of matching the closest date.
         Valid values are 'exact', 'previous', 'next' and next.
 
@@ -142,10 +142,10 @@ def beta(
 
     Parameters
     ----------
-    asset_data : TimeSeries
+    asset_data: TimeSeries
         The time series data of the asset
 
-    market_data : TimeSeries
+    market_data: TimeSeries
         The time series data of the relevant market index
 
     from_date:
@@ -159,19 +159,19 @@ def beta(
     frequency:
         The frequency at which returns should be calculated.
 
-    return_period_unit : 'years', 'months', 'days'
+    return_period_unit: 'years', 'months', 'days'
         The type of time period to use for return calculation.
 
-    return_period_value : int
+    return_period_value: int
         The value of the specified interval type over which returns needs to be calculated.
 
-    as_on_match : str, optional
+    as_on_match: str, optional
             The mode of matching the as_on_date. Refer closest.
 
-    prior_match : str, optional
+    prior_match: str, optional
         The mode of matching the prior_date. Refer closest.
 
-    closest : str, optional
+    closest: str, optional
         The mode of matching the closest date.
         Valid values are 'exact', 'previous', 'next' and next.
 
@@ -216,6 +216,7 @@ def beta(
     return beta
 
 
+@date_parser(4, 5)
 def jensens_alpha(
     asset_data: TimeSeries,
     market_data: TimeSeries,
@@ -243,10 +244,10 @@ def jensens_alpha(
 
     Parameters
     ----------
-    asset_data : TimeSeries
+    asset_data: TimeSeries
         The time series data of the asset
 
-    market_data : TimeSeries
+    market_data: TimeSeries
         The time series data of the relevant market index
 
     risk_free_data:
@@ -270,19 +271,19 @@ def jensens_alpha(
     frequency:
         The frequency at which returns should be calculated.
 
-    return_period_unit : 'years', 'months', 'days'
+    return_period_unit: 'years', 'months', 'days'
         The type of time period to use for return calculation.
 
-    return_period_value : int
+    return_period_value: int
         The value of the specified interval type over which returns needs to be calculated.
 
-    as_on_match : str, optional
+    as_on_match: str, optional
             The mode of matching the as_on_date. Refer closest.
 
-    prior_match : str, optional
+    prior_match: str, optional
         The mode of matching the prior_date. Refer closest.
 
-    closest : str, optional
+    closest: str, optional
         The mode of matching the closest date.
         Valid values are 'exact', 'previous', 'next' and next.
 
@@ -346,3 +347,109 @@ def jensens_alpha(
 
     jensens_alpha = realized_return[1] - risk_free_rate + beta_value * (market_return[1] - risk_free_rate)
     return jensens_alpha
+
+
+@date_parser(2, 3)
+def correlation(
+    data1: TimeSeries,
+    data2: TimeSeries,
+    from_date: str | datetime.datetime = None,
+    to_date: str | datetime.datetime = None,
+    frequency: Literal["D", "W", "M", "Q", "H", "Y"] = None,
+    return_period_unit: Literal["years", "months", "days"] = "years",
+    return_period_value: int = 1,
+    as_on_match: str = "closest",
+    prior_match: str = "closest",
+    closest: Literal["previous", "next"] = "previous",
+    date_format: str = None,
+) -> float:
+    """Calculate the correlation between two assets
+
+    correlation calculation is done based on rolling returns.
+    It must be noted that correlation is not calculated directly on the asset prices.
+    The asset prices used to calculate returns and correlation is then calculated based on these returns.
+    Hence this function requires all parameters for rolling returns calculations.
+
+    Parameters
+    ----------
+    data1: TimeSeries
+        The first time series data
+
+    data2: TimeSeries
+        The second time series data
+
+    from_date:
+        Start date from which returns should be calculated.
+        Defaults to the first date of the series.
+
+    to_date:
+        End date till which returns should be calculated.
+        Defaults to the last date of the series.
+
+    frequency:
+        The frequency at which returns should be calculated.
+
+    return_period_unit: 'years', 'months', 'days'
+        The type of time period to use for return calculation.
+
+    return_period_value: int
+        The value of the specified interval type over which returns needs to be calculated.
+
+    as_on_match: str, optional
+            The mode of matching the as_on_date. Refer closest.
+
+    prior_match: str, optional
+        The mode of matching the prior_date. Refer closest.
+
+    closest: str, optional
+        The mode of matching the closest date.
+        Valid values are 'exact', 'previous', 'next' and next.
+
+    The date format to use for this operation.
+            Should be passed as a datetime library compatible string.
+            Sets the date format only for this operation. To set it globally, use FincalOptions.date_format
+
+    Returns
+    -------
+        The value of beta as a float.
+
+    Raises
+    ------
+    ValueError:
+        * If frequency of both TimeSeries do not match
+        * If both time series do not have data between the from date and to date
+    """
+    interval_years = _interval_to_years(return_period_unit, return_period_value)
+    interval_days = int(interval_years * 365 + 1)
+
+    annual_compounded_returns = True if interval_years > 1 else False
+
+    if from_date is None:
+        from_date = data1.start_date + datetime.timedelta(days=interval_days)
+    if to_date is None:
+        to_date = data1.end_date
+
+    if data1.frequency != data2.frequency:
+        raise ValueError("Correlation calculation requires both time series to be of same frequency")
+
+    if from_date < data2.start_date or to_date > data2.end_date:
+        raise ValueError("Data between from_date and to_date must be present in both time series")
+
+    common_params = {
+        "from_date": from_date,
+        "to_date": to_date,
+        "frequency": frequency,
+        "return_period_unit": return_period_unit,
+        "return_period_value": return_period_value,
+        "as_on_match": as_on_match,
+        "prior_match": prior_match,
+        "closest": closest,
+        "date_format": date_format,
+        "annual_compounded_returns": annual_compounded_returns,
+    }
+
+    asset_rr = data1.calculate_rolling_returns(**common_params)
+    market_rr = data2.calculate_rolling_returns(**common_params)
+
+    cor = statistics.correlation(asset_rr.values, market_rr.values)
+    return cor
