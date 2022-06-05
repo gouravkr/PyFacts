@@ -118,26 +118,34 @@ class TimeSeries(TimeSeriesCore):
         * List of dictionaries with 2 keys, first representing date & second representing value
         * Dictionary of key: value pairs
 
-    date_format : str, optional, default "%Y-%m-%d"
-        Specify the format of the date
-        Required only if the first argument of tuples is a string. Otherwise ignored.
-
     frequency : str, optional, default "infer"
         The frequency of the time series. Default is infer.
         The class will try to infer the frequency automatically and adjust to the closest member.
         Note that inferring frequencies can fail if the data is too irregular.
         Valid values are {D, W, M, Q, H, Y}
+
+    validate_frequency: boolean, default True
+        Whether the provided frequency should be validated against the data.
+        When set to True, if the expected number of data points are not withint the expected limits,
+        it will raise an Exception and object creation will fail.
+        This parameter will be ignored if frequency is not provided.
+        refer core._validate_frequency for more details.
+
+    date_format : str, optional, default "%Y-%m-%d"
+        Specify the format of the date
+        Required only if the first argument of tuples is a string. Otherwise ignored.
     """
 
     def __init__(
         self,
         data: List[Iterable] | Mapping,
-        frequency: Literal["D", "W", "M", "Q", "H", "Y"],
+        frequency: Literal["D", "W", "M", "Q", "H", "Y"] = None,
+        validate_frequency: bool = False,
         date_format: str = "%Y-%m-%d",
     ):
         """Instantiate a TimeSeriesCore object"""
 
-        super().__init__(data, frequency, date_format)
+        super().__init__(data, frequency, validate_frequency, date_format)
 
     def info(self) -> str:
         """Summary info about the TimeSeries object"""

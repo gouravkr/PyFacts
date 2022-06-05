@@ -183,7 +183,7 @@ class TestSetitem:
     data = [("2021-01-01", 220), ("2021-01-04", 230), ("2021-03-07", 240)]
 
     def test_setitem(self):
-        ts = TimeSeriesCore(self.data, frequency="D")
+        ts = TimeSeriesCore(self.data, frequency="M")
         assert len(ts) == 3
 
         ts["2021-01-02"] = 225
@@ -195,7 +195,7 @@ class TestSetitem:
         assert ts["2021-01-02"][1] == 227.6
 
     def test_errors(self):
-        ts = TimeSeriesCore(self.data, frequency="D")
+        ts = TimeSeriesCore(self.data, frequency="M")
         with pytest.raises(TypeError):
             ts["2021-01-03"] = "abc"
 
