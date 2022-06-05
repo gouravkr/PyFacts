@@ -1,7 +1,7 @@
 import datetime
 
 import pytest
-from fincal.utils import _interval_to_years, _parse_date
+from pyfacts.utils import _interval_to_years, _parse_date
 
 
 class TestParseDate:
