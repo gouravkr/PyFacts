@@ -20,7 +20,7 @@ from typing import (
 
 from dateutil.relativedelta import relativedelta
 
-from .utils import FincalOptions, _parse_date, _preprocess_timeseries
+from .utils import PyfactsOptions, _parse_date, _preprocess_timeseries
 
 
 @dataclass(frozen=True)
@@ -908,7 +908,7 @@ class TimeSeriesCore:
         """
 
         if closest is None:
-            closest = FincalOptions.get_closest
+            closest = PyfactsOptions.get_closest
 
         time_delta_dict = {"exact": 0, "previous": -1, "next": 1}
 
@@ -983,7 +983,7 @@ class TimeSeriesCore:
             return self.data
 
         if string_date_format == "default":
-            string_date_format = FincalOptions.date_format
+            string_date_format = PyfactsOptions.date_format
 
         data = {datetime.datetime.strftime(dt, string_date_format): val for dt, val in self.data.items()}
         return data
@@ -1006,7 +1006,7 @@ class TimeSeriesCore:
             return list(self.data.items())
 
         if string_date_format == "default":
-            string_date_format = FincalOptions.date_format
+            string_date_format = PyfactsOptions.date_format
 
         data = [(datetime.datetime.strftime(dt, string_date_format), val) for dt, val in self.data.items()]
         return data

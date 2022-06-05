@@ -1,4 +1,4 @@
-import fincal as fc
+import pyfacts as pft
 
 
 def test_conf(conf_fun):
@@ -8,9 +8,9 @@ def test_conf(conf_fun):
 
 class TestSharpe:
     def test_sharpe_daily_freq(self, create_test_data):
-        data = create_test_data(num=1305, frequency=fc.AllFrequencies.D, skip_weekends=True)
-        ts = fc.TimeSeries(data, "D")
-        sharpe_ratio = fc.sharpe_ratio(
+        data = create_test_data(num=1305, frequency=pft.AllFrequencies.D, skip_weekends=True)
+        ts = pft.TimeSeries(data, "D")
+        sharpe_ratio = pft.sharpe_ratio(
             ts,
             risk_free_rate=0.06,
             from_date="2017-02-04",
@@ -20,7 +20,7 @@ class TestSharpe:
         )
         assert round(sharpe_ratio, 4) == 1.0502
 
-        sharpe_ratio = fc.sharpe_ratio(
+        sharpe_ratio = pft.sharpe_ratio(
             ts,
             risk_free_rate=0.06,
             from_date="2017-01-09",
@@ -30,7 +30,7 @@ class TestSharpe:
         )
         assert round(sharpe_ratio, 4) == 1.0701
 
-        sharpe_ratio = fc.sharpe_ratio(
+        sharpe_ratio = pft.sharpe_ratio(
             ts,
             risk_free_rate=0.06,
             from_date="2018-01-02",
@@ -40,7 +40,7 @@ class TestSharpe:
         )
         assert round(sharpe_ratio, 4) == 1.4374
 
-        sharpe_ratio = fc.sharpe_ratio(
+        sharpe_ratio = pft.sharpe_ratio(
             ts,
             risk_free_rate=0.06,
             from_date="2017-07-03",
@@ -51,9 +51,9 @@ class TestSharpe:
         assert round(sharpe_ratio, 4) == 0.8401
 
     def test_sharpe_weekly_freq(self, create_test_data):
-        data = create_test_data(num=261, frequency=fc.AllFrequencies.W, mu=0.6, sigma=0.7)
-        ts = fc.TimeSeries(data, "W")
-        sharpe_ratio = fc.sharpe_ratio(
+        data = create_test_data(num=261, frequency=pft.AllFrequencies.W, mu=0.6, sigma=0.7)
+        ts = pft.TimeSeries(data, "W")
+        sharpe_ratio = pft.sharpe_ratio(
             ts,
             risk_free_rate=0.052,
             from_date="2017-01-08",
@@ -63,7 +63,7 @@ class TestSharpe:
         )
         assert round(sharpe_ratio, 4) == 0.4533
 
-        sharpe_ratio = fc.sharpe_ratio(
+        sharpe_ratio = pft.sharpe_ratio(
             ts,
             risk_free_rate=0.052,
             from_date="2017-02-05",
@@ -73,7 +73,7 @@ class TestSharpe:
         )
         assert round(sharpe_ratio, 4) == 0.4898
 
-        sharpe_ratio = fc.sharpe_ratio(
+        sharpe_ratio = pft.sharpe_ratio(
             ts,
             risk_free_rate=0.052,
             from_date="2018-01-01",

@@ -2,9 +2,9 @@ import datetime
 import statistics
 from typing import Literal
 
-from fincal.core import date_parser
+from pyfacts.core import date_parser
 
-from .fincal import TimeSeries
+from .pyfacts import TimeSeries
 from .utils import _interval_to_years
 
 

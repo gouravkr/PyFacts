@@ -8,7 +8,7 @@ from .exceptions import DateNotFoundError, DateOutOfRangeError
 
 
 @dataclass
-class FincalOptions:
+class PyfactsOptions:
     date_format: str = "%Y-%m-%d"
     closest: str = "previous"  # next
     traded_days: int = 365
@@ -42,7 +42,7 @@ def _parse_date(date: str, date_format: str = None) -> datetime.datetime:
         return datetime.datetime.fromordinal(date.toordinal())
 
     if date_format is None:
-        date_format = FincalOptions.date_format
+        date_format = PyfactsOptions.date_format
 
     try:
         date = datetime.datetime.strptime(date, date_format)

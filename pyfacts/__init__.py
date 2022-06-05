@@ -1,4 +1,4 @@
 from .core import *
-from .fincal import *
+from .pyfacts import *
 from .statistics import *
 from .utils import *

@@ -11,7 +11,7 @@ from dateutil.relativedelta import relativedelta
 
 from .core import AllFrequencies, Frequency, Series, TimeSeriesCore, date_parser
 from .utils import (
-    FincalOptions,
+    PyfactsOptions,
     _find_closest_date,
     _interval_to_years,
     _is_eomonth,
@@ -540,7 +540,7 @@ class TimeSeries(TimeSeriesCore):
         sd = statistics.stdev(rolling_returns.values)
         if annualize_volatility:
             if traded_days is None:
-                traded_days = FincalOptions.traded_days
+                traded_days = PyfactsOptions.traded_days
 
             if return_period_unit == "months":
                 sd *= math.sqrt(12 / return_period_value)

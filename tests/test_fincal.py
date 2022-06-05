@@ -1,14 +1,14 @@
 import datetime
 
 import pytest
-from fincal import (
+from pyfacts import (
     AllFrequencies,
-    FincalOptions,
+    PyfactsOptions,
     Frequency,
     TimeSeries,
     create_date_series,
 )
-from fincal.exceptions import DateNotFoundError
+from pyfacts.exceptions import DateNotFoundError
 
 
 class TestDateSeries:
@@ -120,7 +120,7 @@ class TestTimeSeriesCreation:
 
 class TestTimeSeriesBasics:
     def test_fill(self, create_test_data):
-        FincalOptions.get_closest = "exact"
+        PyfactsOptions.get_closest = "exact"
         ts_data = create_test_data(frequency=AllFrequencies.D, num=50, skip_weekends=True)
         ts = TimeSeries(ts_data, frequency="D")
         ffill_data = ts.ffill()
@@ -253,7 +253,7 @@ class TestReturns:
     def test_date_formats(self, create_test_data):
         ts_data = create_test_data(AllFrequencies.D, skip_weekends=True)
         ts = TimeSeries(ts_data, "D")
-        FincalOptions.date_format = "%d-%m-%Y"
+        PyfactsOptions.date_format = "%d-%m-%Y"
         with pytest.raises(ValueError):
             ts.calculate_returns(
                 "2020-04-10", annual_compounded_returns=True, return_period_unit="days", return_period_value=90
@@ -265,7 +265,7 @@ class TestReturns:
         returns2 = ts.calculate_returns("01-04-2020", return_period_unit="days", return_period_value=90)
         assert round(returns1[1], 6) == round(returns2[1], 6) == 0.073632
 
-        FincalOptions.date_format = "%m-%d-%Y"
+        PyfactsOptions.date_format = "%m-%d-%Y"
         with pytest.raises(ValueError):
             ts.calculate_returns(
                 "2020-04-01", annual_compounded_returns=True, return_period_unit="days", return_period_value=90
@@ -278,7 +278,7 @@ class TestReturns:
         assert round(returns1[1], 6) == round(returns2[1], 6) == 0.073632
 
     def test_limits(self, create_test_data):
-        FincalOptions.date_format = "%Y-%m-%d"
+        PyfactsOptions.date_format = "%Y-%m-%d"
         ts_data = create_test_data(AllFrequencies.D)
         ts = TimeSeries(ts_data, "D")
         with pytest.raises(DateNotFoundError):
@@ -468,7 +468,7 @@ class TestReturnsAgain:
 
     def test_date_formats(self):
         ts = TimeSeries(self.data, frequency="M")
-        FincalOptions.date_format = "%d-%m-%Y"
+        PyfactsOptions.date_format = "%d-%m-%Y"
         with pytest.raises(ValueError):
             ts.calculate_returns(
                 "2020-04-10", annual_compounded_returns=True, return_period_unit="days", return_period_value=90
@@ -480,7 +480,7 @@ class TestReturnsAgain:
         returns2 = ts.calculate_returns("10-04-2020", return_period_unit="days", return_period_value=90)
         assert round(returns1[1], 4) == round(returns2[1], 4) == 5.727
 
-        FincalOptions.date_format = "%m-%d-%Y"
+        PyfactsOptions.date_format = "%m-%d-%Y"
         with pytest.raises(ValueError):
             ts.calculate_returns(
                 "2020-04-10", annual_compounded_returns=True, return_period_unit="days", return_period_value=90
@@ -494,7 +494,7 @@ class TestReturnsAgain:
 
     def test_limits(self):
         ts = TimeSeries(self.data, frequency="M")
-        FincalOptions.date_format = "%Y-%m-%d"
+        PyfactsOptions.date_format = "%Y-%m-%d"
         with pytest.raises(DateNotFoundError):
             ts.calculate_returns("2020-04-25", return_period_unit="days", return_period_value=90, closest_max_days=10)
 

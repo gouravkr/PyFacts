@@ -3,8 +3,8 @@ from setuptools import find_packages, setup
 license = open("LICENSE").read().strip()
 
 setup(
-    name="Fincal",
-    version='0.0.1',
+    name="PyFacts",
+    version="0.0.1",
     license=license,
     author="Gourav Kumar",
     author_email="gouravkr@outlook.in",

@@ -3,9 +3,9 @@ import random
 from typing import Literal, Mapping, Sequence
 
 import pytest
-from fincal.core import AllFrequencies, Frequency, Series, TimeSeriesCore
-from fincal.fincal import create_date_series
-from fincal.utils import FincalOptions
+from pyfacts.core import AllFrequencies, Frequency, Series, TimeSeriesCore
+from pyfacts.pyfacts import create_date_series
+from pyfacts.utils import PyfactsOptions
 
 
 class TestFrequency:
@@ -141,9 +141,9 @@ class TestSlicing:
         assert ts.get("2021-02-23", -1) == -1
         assert ts.get("2021-02-10", closest="previous")[1] == 230
         assert ts.get("2021-02-10", closest="next")[1] == 240
-        FincalOptions.get_closest = "previous"
+        PyfactsOptions.get_closest = "previous"
         assert ts.get("2021-02-10")[1] == 230
-        FincalOptions.get_closest = "next"
+        PyfactsOptions.get_closest = "next"
         assert ts.get("2021-02-10")[1] == 240
 
     def test_contains(self):
