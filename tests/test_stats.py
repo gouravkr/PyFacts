@@ -82,3 +82,37 @@ class TestSharpe:
             return_period_value=12,
         )
         assert round(sharpe_ratio, 4) == 0.3199
+
+
+class TestBeta:
+    def test_beta_daily_freq(self, create_test_data):
+        market_data = create_test_data(num=3600, frequency=pft.AllFrequencies.D)
+        stock_data = create_test_data(num=3600, frequency=pft.AllFrequencies.D, mu=0.12, sigma=0.08)
+        sts = pft.TimeSeries(stock_data, "D")
+        mts = pft.TimeSeries(market_data, "D")
+        beta = pft.beta(sts, mts, frequency="D", return_period_unit="days", return_period_value=1)
+        assert round(beta, 4) == 1.6001
+
+    def test_beta_daily_freq_daily_returns(self, create_test_data):
+        market_data = create_test_data(num=3600, frequency=pft.AllFrequencies.D)
+        stock_data = create_test_data(num=3600, frequency=pft.AllFrequencies.D, mu=0.12, sigma=0.08)
+        sts = pft.TimeSeries(stock_data, "D")
+        mts = pft.TimeSeries(market_data, "D")
+        beta = pft.beta(sts, mts)
+        assert round(beta, 4) == 1.6292
+
+    def test_beta_monthly_freq(self, create_test_data):
+        market_data = create_test_data(num=3600, frequency=pft.AllFrequencies.D)
+        stock_data = create_test_data(num=3600, frequency=pft.AllFrequencies.D, mu=0.12, sigma=0.08)
+        sts = pft.TimeSeries(stock_data, "D")
+        mts = pft.TimeSeries(market_data, "D")
+        beta = pft.beta(sts, mts, frequency="M")
+        assert round(beta, 4) == 1.629
+
+    def test_beta_monthly_freq_monthly_returns(self, create_test_data):
+        market_data = create_test_data(num=3600, frequency=pft.AllFrequencies.D)
+        stock_data = create_test_data(num=3600, frequency=pft.AllFrequencies.D, mu=0.12, sigma=0.08)
+        sts = pft.TimeSeries(stock_data, "D")
+        mts = pft.TimeSeries(market_data, "D")
+        beta = pft.beta(sts, mts, frequency="M", return_period_unit="months", return_period_value=1)
+        assert round(beta, 4) == 1.6023

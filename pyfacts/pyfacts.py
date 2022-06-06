@@ -140,7 +140,7 @@ class TimeSeries(TimeSeriesCore):
         self,
         data: List[Iterable] | Mapping,
         frequency: Literal["D", "W", "M", "Q", "H", "Y"] = None,
-        validate_frequency: bool = False,
+        validate_frequency: bool = True,
         date_format: str = "%Y-%m-%d",
     ):
         """Instantiate a TimeSeriesCore object"""
@@ -448,7 +448,7 @@ class TimeSeries(TimeSeriesCore):
             )
             rolling_returns.append(returns)
         rolling_returns.sort()
-        return self.__class__(rolling_returns, self.frequency.symbol)
+        return self.__class__(rolling_returns, frequency.symbol)
 
     @date_parser(1, 2)
     def volatility(
