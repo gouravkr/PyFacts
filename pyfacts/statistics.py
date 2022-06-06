@@ -455,3 +455,115 @@ def correlation(
 
     cor = statistics.correlation(asset_rr.values, market_rr.values)
     return cor
+
+
+@date_parser(3, 4)
+def sortino_ratio(
+    time_series_data: TimeSeries,
+    risk_free_data: TimeSeries = None,
+    risk_free_rate: float = None,
+    from_date: str | datetime.datetime = None,
+    to_date: str | datetime.datetime = None,
+    frequency: Literal["D", "W", "M", "Q", "H", "Y"] = None,
+    return_period_unit: Literal["years", "months", "days"] = "years",
+    return_period_value: int = 1,
+    as_on_match: str = "closest",
+    prior_match: str = "closest",
+    closest: Literal["previous", "next"] = "previous",
+    date_format: str = None,
+) -> float:
+    """Calculate the Sharpe ratio of any time series
+
+    Sharpe ratio is a measure of returns per unit of risk,
+    where risk is measured by the standard deviation of the returns.
+
+    The formula for Sharpe ratio is:
+        (average asset return - risk free rate)/volatility of asset returns
+
+    Parameters
+    ----------
+    time_series_data:
+        The time series for which Sharpe ratio needs to be calculated
+
+    risk_free_data:
+        Risk free rates as time series data.
+        This should be the time series of risk free returns,
+        and not the underlying asset value.
+
+    risk_free_rate:
+        Risk free rate to be used.
+        Either risk_free_data or risk_free_rate needs to be provided.
+        If both are provided, the time series data will be used.
+
+    from_date:
+        Start date from which returns should be calculated.
+        Defaults to the first date of the series.
+
+    to_date:
+        End date till which returns should be calculated.
+        Defaults to the last date of the series.
+
+    frequency:
+        The frequency at which returns should be calculated.
+
+    return_period_unit: 'years', 'months', 'days'
+        The type of time period to use for return calculation.
+
+    return_period_value: int
+        The value of the specified interval type over which returns needs to be calculated.
+
+    as_on_match: str, optional
+            The mode of matching the as_on_date. Refer closest.
+
+    prior_match: str, optional
+        The mode of matching the prior_date. Refer closest.
+
+    closest: str, optional
+        The mode of matching the closest date.
+        Valid values are 'exact', 'previous', 'next' and next.
+
+    The date format to use for this operation.
+            Should be passed as a datetime library compatible string.
+            Sets the date format only for this operation. To set it globally, use FincalOptions.date_format
+
+    Returns
+    -------
+        Value of Sharpe ratio as a float.
+
+    Raises
+    ------
+    ValueError
+        If risk free data or risk free rate is not provided.
+    """
+
+    interval_days = int(_interval_to_years(return_period_unit, return_period_value) * 365 + 1)
+
+    if from_date is None:
+        from_date = time_series_data.start_date + datetime.timedelta(days=interval_days)
+    if to_date is None:
+        to_date = time_series_data.end_date
+
+    if risk_free_data is None and risk_free_rate is None:
+        raise ValueError("At least one of risk_free_data or risk_free rate is required")
+    elif risk_free_data is not None:
+        risk_free_rate = risk_free_data.mean()
+
+    common_params = {
+        "from_date": from_date,
+        "to_date": to_date,
+        "frequency": frequency,
+        "return_period_unit": return_period_unit,
+        "return_period_value": return_period_value,
+        "as_on_match": as_on_match,
+        "prior_match": prior_match,
+        "closest": closest,
+        "date_format": date_format,
+    }
+    average_rr_ts = time_series_data.calculate_rolling_returns(**common_params, annual_compounded_returns=True)
+    average_rr = statistics.mean(average_rr_ts.values)
+
+    excess_returns = average_rr - risk_free_rate
+    sd = statistics.stdev([i for i in average_rr_ts.values if i < 0])
+
+    sortino_ratio_value = excess_returns / sd
+    return sortino_ratio_value
