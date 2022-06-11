@@ -1,6 +1,6 @@
 import datetime
 
-from fincal.core import Series
+from pyfacts.core import Series
 
 s1 = Series([2.5, 6.2, 5.6, 8.4, 7.4, 1.5, 9.6, 5])
 
@@ -19,7 +19,7 @@ dt_lst = [
     datetime.datetime(2020, 6, 19, 0, 0),
     datetime.datetime(2016, 3, 16, 0, 0),
     datetime.datetime(2017, 4, 25, 0, 0),
-    datetime.datetime(2016, 7, 10, 0, 0)
+    datetime.datetime(2016, 7, 10, 0, 0),
 ]
 
 s2 = Series(dt_lst)

@@ -180,7 +180,7 @@ class Series(UserList):
             if len(self) != len(other):
                 raise ValueError("Length of Series must be same for comparison")
 
-        elif (self.dtype != float and isinstance(other, Number)) or not isinstance(other, self.dtype):
+        elif self.dtype != float and isinstance(other, Number):
             raise Exception(f"Cannot compare type {self.dtype.__name__} to {type(other).__name__}")
 
         return other
@@ -300,7 +300,9 @@ class Series(UserList):
 
 
 def _validate_frequency(
-    data: List[Tuple[datetime.datetime, float]], provided_frequency: Literal["D", "W", "M", "Q", "H", "Y"] = None
+    data: List[Tuple[datetime.datetime, float]],
+    provided_frequency: Literal["D", "W", "M", "Q", "H", "Y"] = None,
+    raise_error: bool = True,
 ):
     """Checks the data and returns the expected frequency."""
     if provided_frequency is not None:
@@ -325,7 +327,10 @@ def _validate_frequency(
             expected_frequency = frequency
             break
     else:
-        raise ValueError("Data does not match any known frequency. Perhaps you have too many missing data points.")
+        if raise_error:
+            raise ValueError("Data does not match any known frequency. Perhaps you have too many missing data points.")
+        else:
+            expected_frequency = provided_frequency.symbol
 
     expected_data_points = expected_data_points[expected_frequency]
     if provided_frequency is None:
@@ -387,7 +392,7 @@ class TimeSeriesCore:
 
         ts_data = _preprocess_timeseries(ts_data, date_format=date_format)
 
-        validation = _validate_frequency(data=ts_data, provided_frequency=frequency)
+        validation = _validate_frequency(data=ts_data, provided_frequency=frequency, raise_error=validate_frequency)
         if frequency is None:
             frequency = validation["expected_frequency"]
 
@@ -508,7 +513,7 @@ class TimeSeriesCore:
         """Helper function to retrieve items using a list"""
 
         data_to_return = [self._get_item_from_key(key) for key in date_list]
-        return self.__class__(data_to_return, frequency=self.frequency.symbol)
+        return self.__class__(data_to_return, frequency=self.frequency.symbol, validate_frequency=False)
 
     def _get_item_from_series(self, series: Series):
         """Helper function to retrieve item using a Series object

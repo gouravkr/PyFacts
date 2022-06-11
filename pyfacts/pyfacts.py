@@ -344,8 +344,8 @@ class TimeSeries(TimeSeriesCore):
     @date_parser(1, 2)
     def calculate_rolling_returns(
         self,
-        from_date: datetime.date | str,
-        to_date: datetime.date | str,
+        from_date: datetime.date | str = None,
+        to_date: datetime.date | str = None,
         frequency: Literal["D", "W", "M", "Q", "H", "Y"] = None,
         as_on_match: str = "closest",
         prior_match: str = "closest",
@@ -429,6 +429,13 @@ class TimeSeries(TimeSeriesCore):
                 frequency = getattr(AllFrequencies, frequency)
             except AttributeError:
                 raise ValueError(f"Invalid argument for frequency {frequency}")
+        if from_date is None:
+            from_date = self.start_date + relativedelta(
+                days=int(_interval_to_years(return_period_unit, return_period_value) * 365 + 1)
+            )
+
+        if to_date is None:
+            to_date = self.end_date
 
         dates = create_date_series(from_date, to_date, frequency.symbol)
         if frequency == AllFrequencies.D:

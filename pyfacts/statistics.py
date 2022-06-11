@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import statistics
+from cmath import sqrt
 from typing import Literal
 
 from pyfacts.core import date_parser
@@ -472,13 +473,14 @@ def sortino_ratio(
     closest: Literal["previous", "next"] = "previous",
     date_format: str = None,
 ) -> float:
-    """Calculate the Sharpe ratio of any time series
+    """Calculate the Sortino ratio of any time series
 
-    Sharpe ratio is a measure of returns per unit of risk,
-    where risk is measured by the standard deviation of the returns.
+    Sortino ratio is a variation of the Sharpe ratio,
+    where risk is measured as standard deviation of negative returns only.
+    Since deviation on the positive side is not undesirable, hence sortino ratio excludes positive deviations.
 
-    The formula for Sharpe ratio is:
-        (average asset return - risk free rate)/volatility of asset returns
+    The formula for Sortino ratio is:
+        (average asset return - risk free rate)/volatility of negative asset returns
 
     Parameters
     ----------
@@ -528,7 +530,7 @@ def sortino_ratio(
 
     Returns
     -------
-        Value of Sharpe ratio as a float.
+        Value of Sortino ratio as a float.
 
     Raises
     ------
@@ -559,11 +561,13 @@ def sortino_ratio(
         "closest": closest,
         "date_format": date_format,
     }
-    average_rr_ts = time_series_data.calculate_rolling_returns(**common_params, annual_compounded_returns=True)
+    average_rr_ts = time_series_data.calculate_rolling_returns(**common_params, annual_compounded_returns=False)
     average_rr = statistics.mean(average_rr_ts.values)
+    annualized_average_rr = (1 + average_rr) ** (365 / interval_days) - 1
 
-    excess_returns = average_rr - risk_free_rate
+    excess_returns = annualized_average_rr - risk_free_rate
     sd = statistics.stdev([i for i in average_rr_ts.values if i < 0])
+    sd *= sqrt(365 / interval_days)
 
     sortino_ratio_value = excess_returns / sd
     return sortino_ratio_value
