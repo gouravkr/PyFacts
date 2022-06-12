@@ -309,7 +309,7 @@ def _validate_frequency(
         provided_frequency = getattr(AllFrequencies, provided_frequency)
     start_date = data[0][0]
     end_date = data[-1][0]
-    overall_gap = (end_date - start_date).days
+    overall_gap = (end_date - start_date).days + 1
     num_data_points = len(data)
     # days_per_data = num_data_points / overall_gap
 
