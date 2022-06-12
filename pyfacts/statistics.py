@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import datetime
+import math
 import statistics
-from cmath import sqrt
 from typing import Literal
 
 from pyfacts.core import date_parser
@@ -567,7 +567,7 @@ def sortino_ratio(
 
     excess_returns = annualized_average_rr - risk_free_rate
     sd = statistics.stdev([i for i in average_rr_ts.values if i < 0])
-    sd *= sqrt(365 / interval_days)
+    sd *= math.sqrt(365 / interval_days)
 
     sortino_ratio_value = excess_returns / sd
     return sortino_ratio_value
