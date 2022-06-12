@@ -1,16 +1,15 @@
 import datetime
 import random
-from typing import Literal, Mapping, Sequence
+from typing import Mapping
 
+import pyfacts as pft
 import pytest
-from pyfacts.core import AllFrequencies, Frequency, Series, TimeSeriesCore
-from pyfacts.pyfacts import create_date_series
 from pyfacts.utils import PyfactsOptions
 
 
 class TestFrequency:
     def test_creation(self):
-        D = Frequency("daily", "days", 1, 1, "D")
+        D = pft.Frequency("daily", "days", 1, 1, "D")
         assert D.days == 1
         assert D.symbol == "D"
         assert D.name == "daily"
@@ -18,106 +17,103 @@ class TestFrequency:
         assert D.freq_type == "days"
 
 
-def create_test_data(
-    frequency: str,
-    eomonth: bool,
-    n: int,
-    gaps: float,
-    month_position: Literal["start", "middle", "end"],
-    date_as_str: bool,
-    as_outer_type: Literal["dict", "list"] = "list",
-    as_inner_type: Literal["dict", "list", "tuple"] = "tuple",
-) -> Sequence[tuple]:
-    start_dates = {
-        "start": datetime.datetime(2016, 1, 1),
-        "middle": datetime.datetime(2016, 1, 15),
-        "end": datetime.datetime(2016, 1, 31),
-    }
-    end_date = datetime.datetime(2021, 12, 31)
-    dates = create_date_series(start_dates[month_position], end_date, frequency=frequency, eomonth=eomonth)
-    dates = dates[:n]
-    if gaps:
-        num_gaps = int(len(dates) * gaps)
-        to_remove = random.sample(dates, num_gaps)
-        for i in to_remove:
-            dates.remove(i)
-    if date_as_str:
-        dates = [i.strftime("%Y-%m-%d") for i in dates]
-
-    values = [random.randint(8000, 90000) / 100 for _ in dates]
-
-    data = list(zip(dates, values))
-    if as_outer_type == "list":
-        if as_inner_type == "list":
-            data = [list(i) for i in data]
-        elif as_inner_type == "dict[1]":
-            data = [dict((i,)) for i in data]
-        elif as_inner_type == "dict[2]":
-            data = [dict(date=i, value=j) for i, j in data]
-    elif as_outer_type == "dict":
-        data = dict(data)
-
-    return data
-
-
 class TestAllFrequencies:
     def test_attributes(self):
-        assert hasattr(AllFrequencies, "D")
-        assert hasattr(AllFrequencies, "M")
-        assert hasattr(AllFrequencies, "Q")
+        assert hasattr(pft.AllFrequencies, "D")
+        assert hasattr(pft.AllFrequencies, "M")
+        assert hasattr(pft.AllFrequencies, "Q")
 
     def test_days(self):
-        assert AllFrequencies.D.days == 1
-        assert AllFrequencies.M.days == 30
-        assert AllFrequencies.Q.days == 91
+        assert pft.AllFrequencies.D.days == 1
+        assert pft.AllFrequencies.M.days == 30
+        assert pft.AllFrequencies.Q.days == 91
 
     def test_symbol(self):
-        assert AllFrequencies.H.symbol == "H"
-        assert AllFrequencies.W.symbol == "W"
+        assert pft.AllFrequencies.H.symbol == "H"
+        assert pft.AllFrequencies.W.symbol == "W"
 
     def test_values(self):
-        assert AllFrequencies.H.value == 6
-        assert AllFrequencies.Y.value == 1
+        assert pft.AllFrequencies.H.value == 6
+        assert pft.AllFrequencies.Y.value == 1
 
     def test_type(self):
-        assert AllFrequencies.Q.freq_type == "months"
-        assert AllFrequencies.W.freq_type == "days"
+        assert pft.AllFrequencies.Q.freq_type == "months"
+        assert pft.AllFrequencies.W.freq_type == "days"
 
 
 class TestSeries:
     def test_creation(self):
-        series = Series([1, 2, 3, 4, 5, 6, 7], dtype="number")
+        series = pft.Series([1, 2, 3, 4, 5, 6, 7], dtype="number")
         assert series.dtype == float
         assert series[2] == 3
 
-        dates = create_date_series("2021-01-01", "2021-01-31", frequency="D")
-        series = Series(dates, dtype="date")
+        dates = pft.create_date_series("2021-01-01", "2021-01-31", frequency="D")
+        series = pft.Series(dates, dtype="date")
         assert series.dtype == datetime.datetime
 
 
 class TestTimeSeriesCore:
     data = [("2021-01-01", 220), ("2021-02-01", 230), ("2021-03-01", 240)]
 
-    def test_repr_str(self):
-        ts = TimeSeriesCore(self.data, frequency="M")
+    def test_repr_str(self, create_test_data):
+        ts = pft.TimeSeriesCore(self.data, frequency="M")
         assert str(ts) in repr(ts).replace("\t", " ")
 
-        data = create_test_data(frequency="D", eomonth=False, n=50, gaps=0, month_position="start", date_as_str=True)
-        ts = TimeSeriesCore(data, frequency="D")
+        data = create_test_data(frequency=pft.AllFrequencies.D, eomonth=False, num=50, dates_as_string=True)
+        ts = pft.TimeSeriesCore(data, frequency="D")
         assert "..." in str(ts)
         assert "..." in repr(ts)
 
     def test_creation(self):
-        ts = TimeSeriesCore(self.data, frequency="M")
-        assert isinstance(ts, TimeSeriesCore)
+        ts = pft.TimeSeriesCore(self.data, frequency="M")
+        assert isinstance(ts, pft.TimeSeriesCore)
         assert isinstance(ts, Mapping)
+
+    def test_creation_no_freq(self, create_test_data):
+        data = create_test_data(num=300, frequency=pft.AllFrequencies.D)
+        ts = pft.TimeSeriesCore(data)
+        assert ts.frequency == pft.AllFrequencies.D
+
+        data = create_test_data(num=300, frequency=pft.AllFrequencies.M)
+        ts = pft.TimeSeriesCore(data)
+        assert ts.frequency == pft.AllFrequencies.M
+
+    def test_creation_no_freq_missing_data(self, create_test_data):
+        data = create_test_data(num=300, frequency=pft.AllFrequencies.D)
+        data = random.sample(data, 182)
+        ts = pft.TimeSeriesCore(data)
+        assert ts.frequency == pft.AllFrequencies.D
+
+        data = create_test_data(num=300, frequency=pft.AllFrequencies.D)
+        data = random.sample(data, 175)
+        with pytest.raises(ValueError):
+            ts = pft.TimeSeriesCore(data)
+
+        data = create_test_data(num=100, frequency=pft.AllFrequencies.W)
+        data = random.sample(data, 70)
+        ts = pft.TimeSeriesCore(data)
+        assert ts.frequency == pft.AllFrequencies.W
+
+        data = create_test_data(num=100, frequency=pft.AllFrequencies.W)
+        data = random.sample(data, 68)
+        with pytest.raises(ValueError):
+            pft.TimeSeriesCore(data)
+
+    def test_creation_wrong_freq(self, create_test_data):
+        data = create_test_data(num=100, frequency=pft.AllFrequencies.W)
+        with pytest.raises(ValueError):
+            pft.TimeSeriesCore(data, frequency="D")
+
+        data = create_test_data(num=100, frequency=pft.AllFrequencies.D)
+        with pytest.raises(ValueError):
+            pft.TimeSeriesCore(data, frequency="W")
 
 
 class TestSlicing:
     data = [("2021-01-01", 220), ("2021-02-01", 230), ("2021-03-01", 240)]
 
     def test_getitem(self):
-        ts = TimeSeriesCore(self.data, frequency="M")
+        ts = pft.TimeSeriesCore(self.data, frequency="M")
         assert ts.dates[0] == datetime.datetime(2021, 1, 1, 0, 0)
         assert ts.values[0] == 220
         assert ts["2021-01-01"][1] == 220
@@ -129,11 +125,11 @@ class TestSlicing:
             ts["2021-02-03"]
         subset_ts = ts[["2021-01-01", "2021-03-01"]]
         assert len(subset_ts) == 2
-        assert isinstance(subset_ts, TimeSeriesCore)
+        assert isinstance(subset_ts, pft.TimeSeriesCore)
         assert subset_ts.iloc[1][1] == 240
 
     def test_get(self):
-        ts = TimeSeriesCore(self.data, frequency="M")
+        ts = pft.TimeSeriesCore(self.data, frequency="M")
         assert ts.dates[0] == datetime.datetime(2021, 1, 1, 0, 0)
         assert ts.values[0] == 220
         assert ts.get("2021-01-01")[1] == 220
@@ -147,43 +143,63 @@ class TestSlicing:
         assert ts.get("2021-02-10")[1] == 240
 
     def test_contains(self):
-        ts = TimeSeriesCore(self.data, frequency="M")
+        ts = pft.TimeSeriesCore(self.data, frequency="M")
         assert datetime.datetime(2021, 1, 1) in ts
         assert "2021-01-01" in ts
         assert "2021-01-14" not in ts
 
     def test_items(self):
-        ts = TimeSeriesCore(self.data, frequency="M")
+        ts = pft.TimeSeriesCore(self.data, frequency="M")
         for i, j in ts.items():
             assert j == self.data[0][1]
             break
 
     def test_special_keys(self):
-        ts = TimeSeriesCore(self.data, frequency="M")
+        ts = pft.TimeSeriesCore(self.data, frequency="M")
         dates = ts["dates"]
         values = ts["values"]
-        assert isinstance(dates, Series)
-        assert isinstance(values, Series)
+        assert isinstance(dates, pft.Series)
+        assert isinstance(values, pft.Series)
         assert len(dates) == 3
         assert len(values) == 3
         assert dates[0] == datetime.datetime(2021, 1, 1, 0, 0)
         assert values[0] == 220
 
     def test_iloc_slicing(self):
-        ts = TimeSeriesCore(self.data, frequency="M")
+        ts = pft.TimeSeriesCore(self.data, frequency="M")
         assert ts.iloc[0] == (datetime.datetime(2021, 1, 1), 220)
         assert ts.iloc[-1] == (datetime.datetime(2021, 3, 1), 240)
 
         ts_slice = ts.iloc[0:2]
-        assert isinstance(ts_slice, TimeSeriesCore)
+        assert isinstance(ts_slice, pft.TimeSeriesCore)
         assert len(ts_slice) == 2
+
+
+class TestComparativeSlicing:
+    def test_date_gt_daily(self, create_test_data):
+        data = create_test_data(num=300, frequency=pft.AllFrequencies.D)
+        ts = pft.TimeSeries(data, "D")
+        ts_rr = ts.calculate_rolling_returns(return_period_unit="months")
+        assert len(ts_rr) == 269
+        subset = ts_rr[ts_rr.values < 0.1]
+        assert isinstance(subset, pft.TimeSeriesCore)
+        assert subset.frequency == pft.AllFrequencies.D
+
+    def test_date_gt_monthly(self, create_test_data):
+        data = create_test_data(num=60, frequency=pft.AllFrequencies.M)
+        ts = pft.TimeSeries(data, "M")
+        ts_rr = ts.calculate_rolling_returns(return_period_unit="months")
+        assert len(ts_rr) == 59
+        subset = ts_rr[ts_rr.values < 0.1]
+        assert isinstance(subset, pft.TimeSeriesCore)
+        assert subset.frequency == pft.AllFrequencies.M
 
 
 class TestSetitem:
     data = [("2021-01-01", 220), ("2021-01-04", 230), ("2021-03-07", 240)]
 
     def test_setitem(self):
-        ts = TimeSeriesCore(self.data, frequency="M")
+        ts = pft.TimeSeriesCore(self.data, frequency="M")
         assert len(ts) == 3
 
         ts["2021-01-02"] = 225
@@ -195,7 +211,7 @@ class TestSetitem:
         assert ts["2021-01-02"][1] == 227.6
 
     def test_errors(self):
-        ts = TimeSeriesCore(self.data, frequency="M")
+        ts = pft.TimeSeriesCore(self.data, frequency="M")
         with pytest.raises(TypeError):
             ts["2021-01-03"] = "abc"
 
@@ -223,25 +239,25 @@ class TestTimeSeriesCoreHeadTail:
     ]
 
     def test_head(self):
-        ts = TimeSeriesCore(self.data, frequency="M")
+        ts = pft.TimeSeriesCore(self.data, frequency="M")
         assert len(ts.head()) == 6
         assert len(ts.head(3)) == 3
-        assert isinstance(ts.head(), TimeSeriesCore)
+        assert isinstance(ts.head(), pft.TimeSeriesCore)
         head_ts = ts.head(6)
         assert head_ts.iloc[-1][1] == 270
 
     def test_tail(self):
-        ts = TimeSeriesCore(self.data, frequency="M")
+        ts = pft.TimeSeriesCore(self.data, frequency="M")
         assert len(ts.tail()) == 6
         assert len(ts.tail(8)) == 8
-        assert isinstance(ts.tail(), TimeSeriesCore)
+        assert isinstance(ts.tail(), pft.TimeSeriesCore)
         tail_ts = ts.tail(6)
         assert tail_ts.iloc[0][1] == 280
 
     def test_head_tail(self):
-        ts = TimeSeriesCore(self.data, frequency="M")
+        ts = pft.TimeSeriesCore(self.data, frequency="M")
         head_tail_ts = ts.head(8).tail(2)
-        assert isinstance(head_tail_ts, TimeSeriesCore)
+        assert isinstance(head_tail_ts, pft.TimeSeriesCore)
         assert "2021-07-01" in head_tail_ts
         assert head_tail_ts.iloc[1][1] == 290
 
@@ -255,7 +271,7 @@ class TestDelitem:
     ]
 
     def test_deletion(self):
-        ts = TimeSeriesCore(self.data, "M")
+        ts = pft.TimeSeriesCore(self.data, "M")
         assert len(ts) == 4
         del ts["2021-03-01"]
         assert len(ts) == 3
@@ -281,42 +297,42 @@ class TestTimeSeriesComparisons:
     ]
 
     def test_number_comparison(self):
-        ts1 = TimeSeriesCore(self.data1, "M")
-        assert isinstance(ts1 > 23, TimeSeriesCore)
-        assert (ts1 > 230).values == Series([0.0, 0.0, 1.0, 1.0], "float")
-        assert (ts1 >= 230).values == Series([0.0, 1.0, 1.0, 1.0], "float")
-        assert (ts1 < 240).values == Series([1.0, 1.0, 0.0, 0.0], "float")
-        assert (ts1 <= 240).values == Series([1.0, 1.0, 1.0, 0.0], "float")
-        assert (ts1 == 240).values == Series([0.0, 0.0, 1.0, 0.0], "float")
-        assert (ts1 != 240).values == Series([1.0, 1.0, 0.0, 1.0], "float")
+        ts1 = pft.TimeSeriesCore(self.data1, "M")
+        assert isinstance(ts1 > 23, pft.TimeSeriesCore)
+        assert (ts1 > 230).values == pft.Series([0.0, 0.0, 1.0, 1.0], "float")
+        assert (ts1 >= 230).values == pft.Series([0.0, 1.0, 1.0, 1.0], "float")
+        assert (ts1 < 240).values == pft.Series([1.0, 1.0, 0.0, 0.0], "float")
+        assert (ts1 <= 240).values == pft.Series([1.0, 1.0, 1.0, 0.0], "float")
+        assert (ts1 == 240).values == pft.Series([0.0, 0.0, 1.0, 0.0], "float")
+        assert (ts1 != 240).values == pft.Series([1.0, 1.0, 0.0, 1.0], "float")
 
     def test_series_comparison(self):
-        ts1 = TimeSeriesCore(self.data1, "M")
-        ser = Series([240, 210, 240, 270], dtype="int")
+        ts1 = pft.TimeSeriesCore(self.data1, "M")
+        ser = pft.Series([240, 210, 240, 270], dtype="int")
 
-        assert (ts1 > ser).values == Series([0.0, 1.0, 0.0, 0.0], "float")
-        assert (ts1 >= ser).values == Series([0.0, 1.0, 1.0, 0.0], "float")
-        assert (ts1 < ser).values == Series([1.0, 0.0, 0.0, 1.0], "float")
-        assert (ts1 <= ser).values == Series([1.0, 0.0, 1.0, 1.0], "float")
-        assert (ts1 == ser).values == Series([0.0, 0.0, 1.0, 0.0], "float")
-        assert (ts1 != ser).values == Series([1.0, 1.0, 0.0, 1.0], "float")
+        assert (ts1 > ser).values == pft.Series([0.0, 1.0, 0.0, 0.0], "float")
+        assert (ts1 >= ser).values == pft.Series([0.0, 1.0, 1.0, 0.0], "float")
+        assert (ts1 < ser).values == pft.Series([1.0, 0.0, 0.0, 1.0], "float")
+        assert (ts1 <= ser).values == pft.Series([1.0, 0.0, 1.0, 1.0], "float")
+        assert (ts1 == ser).values == pft.Series([0.0, 0.0, 1.0, 0.0], "float")
+        assert (ts1 != ser).values == pft.Series([1.0, 1.0, 0.0, 1.0], "float")
 
     def test_tsc_comparison(self):
-        ts1 = TimeSeriesCore(self.data1, "M")
-        ts2 = TimeSeriesCore(self.data2, "M")
+        ts1 = pft.TimeSeriesCore(self.data1, "M")
+        ts2 = pft.TimeSeriesCore(self.data2, "M")
 
-        assert (ts1 > ts2).values == Series([0.0, 1.0, 0.0, 0.0], "float")
-        assert (ts1 >= ts2).values == Series([0.0, 1.0, 1.0, 0.0], "float")
-        assert (ts1 < ts2).values == Series([1.0, 0.0, 0.0, 1.0], "float")
-        assert (ts1 <= ts2).values == Series([1.0, 0.0, 1.0, 1.0], "float")
-        assert (ts1 == ts2).values == Series([0.0, 0.0, 1.0, 0.0], "float")
-        assert (ts1 != ts2).values == Series([1.0, 1.0, 0.0, 1.0], "float")
+        assert (ts1 > ts2).values == pft.Series([0.0, 1.0, 0.0, 0.0], "float")
+        assert (ts1 >= ts2).values == pft.Series([0.0, 1.0, 1.0, 0.0], "float")
+        assert (ts1 < ts2).values == pft.Series([1.0, 0.0, 0.0, 1.0], "float")
+        assert (ts1 <= ts2).values == pft.Series([1.0, 0.0, 1.0, 1.0], "float")
+        assert (ts1 == ts2).values == pft.Series([0.0, 0.0, 1.0, 0.0], "float")
+        assert (ts1 != ts2).values == pft.Series([1.0, 1.0, 0.0, 1.0], "float")
 
     def test_errors(self):
-        ts1 = TimeSeriesCore(self.data1, "M")
-        ts2 = TimeSeriesCore(self.data2, "M")
-        ser = Series([240, 210, 240], dtype="int")
-        ser2 = Series(["2021-01-01", "2021-02-01", "2021-03-01", "2021-04-01"], dtype="date")
+        ts1 = pft.TimeSeriesCore(self.data1, "M")
+        ts2 = pft.TimeSeriesCore(self.data2, "M")
+        ser = pft.Series([240, 210, 240], dtype="int")
+        ser2 = pft.Series(["2021-01-01", "2021-02-01", "2021-03-01", "2021-04-01"], dtype="date")
 
         del ts2["2021-04-01"]
 
@@ -345,7 +361,7 @@ class TestTimeSeriesArithmatic:
     ]
 
     def test_add(self):
-        ts = TimeSeriesCore(self.data, "M")
+        ts = pft.TimeSeriesCore(self.data, "M")
         ser = ts.values
 
         num_add_ts = ts + 40
@@ -365,8 +381,8 @@ class TestTimeSeriesArithmatic:
         assert ts_add_ts["2021-04-01"][1] == 540
 
     def test_sub(self):
-        ts = TimeSeriesCore(self.data, "M")
-        ser = Series([20, 30, 40, 50], "number")
+        ts = pft.TimeSeriesCore(self.data, "M")
+        ser = pft.Series([20, 30, 40, 50], "number")
 
         num_sub_ts = ts - 40
         assert num_sub_ts["2021-01-01"][1] == 180
@@ -385,8 +401,8 @@ class TestTimeSeriesArithmatic:
         assert ts_sub_ts["2021-04-01"][1] == 40
 
     def test_truediv(self):
-        ts = TimeSeriesCore(self.data, "M")
-        ser = Series([22, 23, 24, 25], "number")
+        ts = pft.TimeSeriesCore(self.data, "M")
+        ser = pft.Series([22, 23, 24, 25], "number")
 
         num_div_ts = ts / 10
         assert num_div_ts["2021-01-01"][1] == 22
@@ -404,8 +420,8 @@ class TestTimeSeriesArithmatic:
         assert ts_div_ts["2021-04-01"][1] == 10
 
     def test_floordiv(self):
-        ts = TimeSeriesCore(self.data, "M")
-        ser = Series([22, 23, 24, 25], "number")
+        ts = pft.TimeSeriesCore(self.data, "M")
+        ser = pft.Series([22, 23, 24, 25], "number")
 
         num_div_ts = ts // 11
         assert num_div_ts["2021-02-01"][1] == 20

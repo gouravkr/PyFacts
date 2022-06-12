@@ -62,6 +62,7 @@ def sample_data_generator(
     mu: float = 0.1,
     sigma: float = 0.05,
     eomonth: bool = False,
+    dates_as_string: bool = False,
 ) -> List[tuple]:
     """Creates TimeSeries data
 
@@ -95,6 +96,8 @@ def sample_data_generator(
     }
     end_date = start_date + relativedelta(**timedelta_dict)
     dates = pft.create_date_series(start_date, end_date, frequency.symbol, skip_weekends=skip_weekends, eomonth=eomonth)
+    if dates_as_string:
+        dates = [dt.strftime("%Y-%m-%d") for dt in dates]
     values = create_prices(1000, mu, sigma, num)
     ts = list(zip(dates, values))
     return ts
