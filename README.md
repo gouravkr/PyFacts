@@ -29,7 +29,7 @@ Example:
 ...    ('2021-06-01', 20)
 ...]
 
->>> ts = fc.TimeSeries(time_series_data)
+>>> ts = pft.TimeSeries(time_series_data)
 ```
 
 ### Sample usage
@@ -46,11 +46,168 @@ With PyFacts, you never have to go into the hassle of creating datetime objects 
 
 ```
 >>> import pyfacts as pft
->>> fc.PyfactsOptions.date_format = '%d-%m-%Y'
+>>> pft.PyfactsOptions.date_format = '%d-%m-%Y'
 ```
 Now the library will automatically parse all dates as DD-MM-YYYY
 
 If you happen to have any one situation where you need to use a different format, all methods accept a date_format parameter to override the default.
+
+
+### Working with multiple time series
+While working with time series data, you will often need to perform calculations on the data. PyFacts supports all kinds of mathematical operations on time series.
+
+Example:
+```
+>>> import pyfacts as pft
+
+>>> time_series_data = [
+...    ('2021-01-01', 10),
+...    ('2021-02-01', 12),
+...    ('2021-03-01', 14),
+...    ('2021-04-01', 16),
+...    ('2021-05-01', 18),
+...    ('2021-06-01', 20)
+...]
+
+>>> ts = pft.TimeSeries(time_series_data)
+>>> print(ts/100)
+
+TimeSeries([(datetime.datetime(2022, 1, 1, 0, 0), 0.1),
+	(datetime.datetime(2022, 1, 2, 0, 0), 0.12),
+	(datetime.datetime(2022, 1, 3, 0, 0), 0.14),
+	(datetime.datetime(2022, 1, 4, 0, 0), 0.16),
+	(datetime.datetime(2022, 1, 6, 0, 0), 0.18),
+	(datetime.datetime(2022, 1, 7, 0, 0), 0.2)], frequency='M')
+```
+
+Mathematical operations can also be done between time series as long as they have the same dates.
+
+Example:
+```
+>>> import pyfacts as pft
+
+>>> time_series_data = [
+...    ('2021-01-01', 10),
+...    ('2021-02-01', 12),
+...    ('2021-03-01', 14),
+...    ('2021-04-01', 16),
+...    ('2021-05-01', 18),
+...    ('2021-06-01', 20)
+...]
+
+>>> ts = pft.TimeSeries(time_series_data)
+>>> ts2 = pft.TimeSeries(time_series_data)
+>>> print(ts/ts2)
+
+TimeSeries([(datetime.datetime(2022, 1, 1, 0, 0), 1.0),
+	(datetime.datetime(2022, 1, 2, 0, 0), 1.0),
+	(datetime.datetime(2022, 1, 3, 0, 0), 1.0),
+	(datetime.datetime(2022, 1, 4, 0, 0), 1.0),
+	(datetime.datetime(2022, 1, 6, 0, 0), 1.0),
+	(datetime.datetime(2022, 1, 7, 0, 0), 1.0)], frequency='M')
+```
+
+However, if the dates are not in sync, PyFacts provides convenience methods for syncronising dates.
+
+Example:
+```
+>>> import pyfacts as pft
+
+>>> data1 = [
+...    ('2021-01-01', 10),
+...    ('2021-02-01', 12),
+...    ('2021-03-01', 14),
+...    ('2021-04-01', 16),
+...    ('2021-05-01', 18),
+...    ('2021-06-01', 20)
+...]
+
+>>> data2 = [
+...    ("2022-15-01", 20),
+...    ("2022-15-02", 22),
+...    ("2022-15-03", 24),
+...    ("2022-15-04", 26),
+...    ("2022-15-06", 28),
+...    ("2022-15-07", 30)
+...]
+
+>>> ts = pft.TimeSeries(data, frequency='M', date_format='%Y-%d-%m')
+>>> ts2 = pft.TimeSeries(data2, frequency='M', date_format='%Y-%d-%m')
+>>> ts.sync(ts2, fill_method='bfill')  # Sync ts2 with ts1
+
+TimeSeries([(datetime.datetime(2022, 1, 1, 0, 0), 20.0),
+	(datetime.datetime(2022, 2, 1, 0, 0), 22.0),
+	(datetime.datetime(2022, 3, 1, 0, 0), 24.0),
+	(datetime.datetime(2022, 4, 1, 0, 0), 26.0),
+	(datetime.datetime(2022, 6, 1, 0, 0), 28.0),
+	(datetime.datetime(2022, 7, 1, 0, 0), 30.0)], frequency='M')
+```
+
+Even if you need to perform calculations on data with different frequencies, PyFacts will let you easily handle this with the expand and shrink methods.
+
+Example:
+```
+>>> data = [
+...    ("2022-01-01", 10),
+...    ("2022-02-01", 12),
+...    ("2022-03-01", 14),
+...    ("2022-04-01", 16),
+...    ("2022-05-01", 18),
+...    ("2022-06-01", 20)
+...]
+
+>>> ts = pft.TimeSeries(data, 'M')
+>>> ts.expand(to_frequency='W', method='ffill')
+
+TimeSeries([(datetime.datetime(2022, 1, 1, 0, 0), 10.0),
+	    (datetime.datetime(2022, 1, 8, 0, 0), 10.0),
+	    (datetime.datetime(2022, 1, 15, 0, 0), 10.0)
+	    ...
+	    (datetime.datetime(2022, 5, 14, 0, 0), 18.0),
+	    (datetime.datetime(2022, 5, 21, 0, 0), 18.0),
+	    (datetime.datetime(2022, 5, 28, 0, 0), 18.0)], frequency='W')
+
+>>> ts.shrink(to_frequency='Q', method='ffill')
+
+TimeSeries([(datetime.datetime(2022, 1, 1, 0, 0), 10.0),
+	(datetime.datetime(2022, 4, 1, 0, 0), 16.0)], frequency='Q')
+```
+
+If you want to shorten the timeframe of the data with an aggregation function, the transform method will help you out. Currently it supports sum and mean.
+
+Example:
+```
+>>> data = [
+...    ("2022-01-01", 10),
+...    ("2022-02-01", 12),
+...    ("2022-03-01", 14),
+...    ("2022-04-01", 16),
+...    ("2022-05-01", 18),
+...    ("2022-06-01", 20),
+...    ("2022-07-01", 22),
+...    ("2022-08-01", 24),
+...    ("2022-09-01", 26),
+...    ("2022-10-01", 28),
+...    ("2022-11-01", 30),
+...    ("2022-12-01", 32)
+...]
+
+>>> ts = pft.TimeSeries(data, 'M')
+>>> ts.transform(to_frequency='Q', method='sum')
+
+TimeSeries([(datetime.datetime(2022, 1, 1, 0, 0), 36.0),
+	(datetime.datetime(2022, 4, 1, 0, 0), 54.0),
+	(datetime.datetime(2022, 7, 1, 0, 0), 72.0),
+	(datetime.datetime(2022, 10, 1, 0, 0), 90.0)], frequency='Q')
+
+>>> ts.transform(to_frequency='Q', method='mean')
+
+TimeSeries([(datetime.datetime(2022, 1, 1, 0, 0), 12.0),
+	(datetime.datetime(2022, 4, 1, 0, 0), 18.0),
+	(datetime.datetime(2022, 7, 1, 0, 0), 24.0),
+	(datetime.datetime(2022, 10, 1, 0, 0), 30.0)], frequency='Q')
+```
+
 
 ## To-do
 
