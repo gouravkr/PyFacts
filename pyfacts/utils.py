@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import datetime
+import statistics
 from dataclasses import dataclass
 from typing import List, Literal, Mapping, Sequence, Tuple
 
@@ -187,3 +190,36 @@ def _is_eomonth(dates: Sequence[datetime.datetime], threshold: float = 0.7):
     eomonth_dates = [date.month != (date + relativedelta(days=1)).month for date in dates]
     eomonth_proportion = sum(eomonth_dates) / len(dates)
     return eomonth_proportion > threshold
+
+
+def covariance(series1: list, series2: list) -> float:
+    """Returns the covariance of two series
+
+        This is a compatibility function for Python versions prior to 3.10.
+        It will be replaced with statistics.covariance when support is dropped for versions <3.10.
+
+    Parameters
+    ----------
+    series1 : List
+        A list of numbers
+    series2 : list
+        A list of numbers
+
+    Returns
+    -------
+    float
+        Returns the covariance as a float value
+    """
+
+    n = len(series1)
+    if len(series2) != n:
+        raise ValueError("Lenght of both series must be same for covariance calcualtion.")
+    if n < 2:
+        raise ValueError("At least two data poitns are required for covariance calculation.")
+
+    mean1 = statistics.mean(series1)
+    mean2 = statistics.mean(series2)
+
+    xy = sum([(x - mean1) * (y - mean2) for x, y in zip(series1, series2)])
+
+    return xy / n

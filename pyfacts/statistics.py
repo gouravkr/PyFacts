@@ -8,7 +8,7 @@ from typing import Literal
 from pyfacts.core import date_parser
 
 from .pyfacts import TimeSeries
-from .utils import _interval_to_years
+from .utils import _interval_to_years, covariance
 
 
 @date_parser(3, 4)
@@ -212,7 +212,7 @@ def beta(
     asset_rr = asset_data.calculate_rolling_returns(**common_params)
     market_rr = market_data.calculate_rolling_returns(**common_params)
 
-    cov = statistics.covariance(asset_rr.values, market_rr.values)
+    cov = covariance(asset_rr.values, market_rr.values)
     market_var = statistics.variance(market_rr.values)
 
     beta = cov / market_var
