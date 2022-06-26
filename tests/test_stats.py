@@ -86,47 +86,25 @@ class TestSharpe:
 
 class TestSortino:
     def test_sortino_daily_freq(self, create_test_data):
-        data = create_test_data(num=1305, frequency=pft.AllFrequencies.D, skip_weekends=True)
+        data = create_test_data(num=3600, frequency=pft.AllFrequencies.D, mu=0.12, sigma=0.12)
         ts = pft.TimeSeries(data, "D")
         sortino_ratio = pft.sortino_ratio(
             ts,
-            risk_free_rate=0.06,
+            risk_free_rate=0.06 / 12,
             from_date="2017-02-02",
-            to_date="2021-12-31",
             return_period_unit="months",
             return_period_value=1,
         )
-        assert round(sortino_ratio, 4) == 2.5377
+        assert round(sortino_ratio, 4) == 1.625
 
-    #     sharpe_ratio = pft.sharpe_ratio(
-    #         ts,
-    #         risk_free_rate=0.06,
-    #         from_date="2017-01-09",
-    #         to_date="2021-12-31",
-    #         return_period_unit="days",
-    #         return_period_value=7,
-    #     )
-    #     assert round(sharpe_ratio, 4) == 1.0701
-
-    #     sharpe_ratio = pft.sharpe_ratio(
-    #         ts,
-    #         risk_free_rate=0.06,
-    #         from_date="2018-01-02",
-    #         to_date="2021-12-31",
-    #         return_period_unit="years",
-    #         return_period_value=1,
-    #     )
-    #     assert round(sharpe_ratio, 4) == 1.4374
-
-    #     sharpe_ratio = pft.sharpe_ratio(
-    #         ts,
-    #         risk_free_rate=0.06,
-    #         from_date="2017-07-03",
-    #         to_date="2021-12-31",
-    #         return_period_unit="months",
-    #         return_period_value=6,
-    #     )
-    #     assert round(sharpe_ratio, 4) == 0.8401
+        sortino_ratio = pft.sortino_ratio(
+            ts,
+            risk_free_rate=0.06,
+            from_date="2018-01-02",
+            return_period_unit="years",
+            return_period_value=1,
+        )
+        assert round(sortino_ratio, 4) == 1.2564
 
     # def test_sharpe_weekly_freq(self, create_test_data):
     #     data = create_test_data(num=261, frequency=pft.AllFrequencies.W, mu=0.6, sigma=0.7)
@@ -185,7 +163,7 @@ class TestBeta:
         sts = pft.TimeSeries(stock_data, "D")
         mts = pft.TimeSeries(market_data, "D")
         beta = pft.beta(sts, mts, frequency="M")
-        assert round(beta, 4) == 1.6137
+        assert round(beta, 4) == 1.6131
 
     def test_beta_monthly_freq_monthly_returns(self, create_test_data):
         market_data = create_test_data(num=3600, frequency=pft.AllFrequencies.D)

@@ -90,7 +90,7 @@ def sharpe_ratio(
         If risk free data or risk free rate is not provided.
     """
 
-    interval_days = int(_interval_to_years(return_period_unit, return_period_value) * 365 + 1)
+    interval_days = math.ceil(_interval_to_years(return_period_unit, return_period_value) * 365)
 
     if from_date is None:
         from_date = time_series_data.start_date + datetime.timedelta(days=interval_days)
@@ -187,7 +187,7 @@ def beta(
         The value of beta as a float.
     """
     interval_years = _interval_to_years(return_period_unit, return_period_value)
-    interval_days = int(interval_years * 365 + 1)
+    interval_days = math.ceil(interval_years * 365)
 
     annual_compounded_returns = True if interval_years > 1 else False
 
@@ -300,7 +300,7 @@ def jensens_alpha(
     """
 
     interval_years = _interval_to_years(return_period_unit, return_period_value)
-    interval_days = int(interval_years * 365 + 1)
+    interval_days = math.ceil(interval_years * 365)
 
     if from_date is None:
         from_date = asset_data.start_date + datetime.timedelta(days=interval_days)
@@ -423,7 +423,7 @@ def correlation(
         * If both time series do not have data between the from date and to date
     """
     interval_years = _interval_to_years(return_period_unit, return_period_value)
-    interval_days = int(interval_years * 365 + 1)
+    interval_days = math.ceil(interval_years * 365)
 
     annual_compounded_returns = True if interval_years > 1 else False
 
@@ -538,7 +538,7 @@ def sortino_ratio(
         If risk free data or risk free rate is not provided.
     """
 
-    interval_days = int(_interval_to_years(return_period_unit, return_period_value) * 365 + 1)
+    interval_days = math.ceil(_interval_to_years(return_period_unit, return_period_value) * 365)
 
     if from_date is None:
         from_date = time_series_data.start_date + datetime.timedelta(days=interval_days)
